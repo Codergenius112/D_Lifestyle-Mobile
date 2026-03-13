@@ -1,164 +1,160 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  StyleSheet, 
-  StatusBar,
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
-  Alert
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import StarlightBackground from '../../components/StarlightBackground';
 import { useStore } from '../../store/useStore';
-import { authAPI } from '../../services/api';
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  
+
   const login = useStore((state) => state.login);
 
   const handleLogin = async () => {
-    // Validation
-    if (!email.trim() || !password.trim()) {
-      Alert.alert('Error', 'Please fill in all fields');
+    // Validate inputs
+    if (!email.trim()) {
+      Alert.alert('Error', 'Please enter your email');
       return;
     }
 
-    if (!email.includes('@')) {
-      Alert.alert('Error', 'Please enter a valid email');
+    if (!password.trim()) {
+      Alert.alert('Error', 'Please enter your password');
       return;
     }
 
-    try {
-      setLoading(true);
-      const response = await authAPI.login(email.trim(), password);
-      
-      // Store user data in Zustand
-      login(response.user, response.token);
-      
-      // Navigation will automatically switch to Main tabs due to AppNavigator checking isAuthenticated
-    } catch (error: any) {
-      console.error('Login error:', error);
-      Alert.alert(
-        'Login Failed', 
-        error.response?.data?.message || 'Invalid email or password. Please try again.'
-      );
-    } finally {
+    setLoading(true);
+
+    // MOCK LOGIN - Accept any credentials
+    setTimeout(() => {
+      // Create mock user data
+      const mockUser = {
+        id: '123456',
+        name: email.split('@')[0] || 'Test User', // Use email prefix as name
+        email: email,
+        phone: '+234 123 456 7890',
+        profileImage: 'https://via.placeholder.com/150',
+        address: 'Lagos, Nigeria',
+        createdAt: new Date().toISOString(),
+      };
+
+      const mockToken = 'mock-jwt-token-12345';
+
+      // Log user in with Zustand
+      login(mockUser, mockToken);
+
       setLoading(false);
-    }
+
+      Alert.alert('Success', `Welcome back, ${mockUser.name}!`);
+    }, 1000); // Simulate network delay
   };
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container} 
+    <KeyboardAvoidingView
+      style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <StarlightBackground />
-      <StatusBar barStyle="light-content" />
 
       <View style={styles.content}>
-        {/* Logo/Header */}
+        {/* Header */}
         <View style={styles.header}>
-          <Ionicons name="musical-notes" size={64} color="#f5dd4b" />
-          <Text style={styles.appName}>ClubSync</Text>
-          <Text style={styles.tagline}>Your Nightlife Companion</Text>
+          <Text style={styles.title}>Welcome Back!</Text>
+          <Text style={styles.subtitle}>Sign in to continue</Text>
         </View>
 
-        {/* Login Form */}
-        <View style={styles.form}>
-          <Text style={styles.title}>Welcome Back</Text>
-          <Text style={styles.subtitle}>Sign in to continue</Text>
+        {/* Mock Login Notice */}
+        <View style={styles.mockNotice}>
+          <Ionicons name="information-circle" size={20} color="#f5dd4b" />
+          <Text style={styles.mockText}>
+            Mock Login: Enter any email & password
+          </Text>
+        </View>
 
-          {/* Email Input */}
-          <View style={styles.inputContainer}>
-            <Ionicons name="mail-outline" size={20} color="#888" style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Email"
-              placeholderTextColor="#888"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
+        {/* Email Input */}
+        <View style={styles.inputContainer}>
+          <Ionicons name="mail-outline" size={20} color="#888" style={styles.inputIcon} />
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            placeholderTextColor="#666"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+        </View>
+
+        {/* Password Input */}
+        <View style={styles.inputContainer}>
+          <Ionicons name="lock-closed-outline" size={20} color="#888" style={styles.inputIcon} />
+          <TextInput
+            style={styles.input}
+            placeholder="Password"
+            placeholderTextColor="#666"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={!showPassword}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+            <Ionicons
+              name={showPassword ? 'eye-outline' : 'eye-off-outline'}
+              size={20}
+              color="#888"
             />
-          </View>
-
-          {/* Password Input */}
-          <View style={styles.inputContainer}>
-            <Ionicons name="lock-closed-outline" size={20} color="#888" style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Password"
-              placeholderTextColor="#888"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={!showPassword}
-              autoCapitalize="none"
-            />
-            <TouchableOpacity 
-              onPress={() => setShowPassword(!showPassword)}
-              style={styles.eyeIcon}
-            >
-              <Ionicons 
-                name={showPassword ? "eye-outline" : "eye-off-outline"} 
-                size={20} 
-                color="#888" 
-              />
-            </TouchableOpacity>
-          </View>
-
-          {/* Forgot Password */}
-          <TouchableOpacity style={styles.forgotPassword}>
-            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
           </TouchableOpacity>
+        </View>
 
-          {/* Login Button */}
-          <TouchableOpacity 
-            style={[styles.loginButton, loading && styles.loginButtonDisabled]}
-            onPress={handleLogin}
-            disabled={loading}
-            activeOpacity={0.8}
+        {/* Forgot Password */}
+        <TouchableOpacity style={styles.forgotPassword}>
+          <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+        </TouchableOpacity>
+
+        {/* Login Button */}
+        <TouchableOpacity
+          style={[styles.loginButton, loading && styles.loginButtonDisabled]}
+          onPress={handleLogin}
+          disabled={loading}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.loginButtonText}>
+            {loading ? 'Signing In...' : 'Sign In'}
+          </Text>
+        </TouchableOpacity>
+
+        {/* Sign Up Link */}
+        <View style={styles.signupContainer}>
+          <Text style={styles.signupText}>Don't have an account? </Text>
+          <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
+            <Text style={styles.signupLink}>Sign Up</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Quick Test Buttons */}
+        <View style={styles.quickTestContainer}>
+          <Text style={styles.quickTestTitle}>Quick Test:</Text>
+          <TouchableOpacity
+            style={styles.quickTestButton}
+            onPress={() => {
+              setEmail('test@clubsync.com');
+              setPassword('password123');
+            }}
           >
-            {loading ? (
-              <ActivityIndicator color="#000" />
-            ) : (
-              <Text style={styles.loginButtonText}>Login</Text>
-            )}
+            <Text style={styles.quickTestButtonText}>Fill Test Credentials</Text>
           </TouchableOpacity>
-
-          {/* Divider */}
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>OR</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          {/* Social Login Buttons */}
-          <TouchableOpacity style={styles.socialButton}>
-            <Ionicons name="logo-google" size={20} color="#fff" />
-            <Text style={styles.socialButtonText}>Continue with Google</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.socialButton}>
-            <Ionicons name="logo-apple" size={20} color="#fff" />
-            <Text style={styles.socialButtonText}>Continue with Apple</Text>
-          </TouchableOpacity>
-
-          {/* Sign Up Link */}
-          <View style={styles.signupContainer}>
-            <Text style={styles.signupText}>Don't have an account? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
-              <Text style={styles.signupLink}>Sign Up</Text>
-            </TouchableOpacity>
-          </View>
         </View>
       </View>
     </KeyboardAvoidingView>
@@ -173,44 +169,44 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     justifyContent: 'center',
-    padding: 20,
+    paddingHorizontal: 30,
   },
   header: {
-    alignItems: 'center',
     marginBottom: 40,
   },
-  appName: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginTop: 16,
-  },
-  tagline: {
-    fontSize: 14,
-    color: '#888',
-    marginTop: 4,
-  },
-  form: {
-    width: '100%',
-  },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
     color: '#fff',
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#888',
-    marginBottom: 32,
+  },
+  mockNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(245, 221, 75, 0.1)',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 24,
+  },
+  mockText: {
+    color: '#f5dd4b',
+    fontSize: 12,
+    marginLeft: 8,
+    flex: 1,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: 12,
-    marginBottom: 16,
     paddingHorizontal: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   inputIcon: {
     marginRight: 12,
@@ -220,9 +216,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     paddingVertical: 16,
-  },
-  eyeIcon: {
-    padding: 8,
   },
   forgotPassword: {
     alignSelf: 'flex-end',
@@ -240,46 +233,17 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   loginButtonDisabled: {
-    opacity: 0.6,
+    opacity: 0.5,
   },
   loginButtonText: {
     color: '#000',
     fontSize: 18,
     fontWeight: 'bold',
   },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  dividerText: {
-    color: '#888',
-    paddingHorizontal: 16,
-    fontSize: 14,
-  },
-  socialButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 12,
-    paddingVertical: 14,
-    marginBottom: 12,
-  },
-  socialButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    marginLeft: 12,
-  },
   signupContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 24,
+    alignItems: 'center',
   },
   signupText: {
     color: '#888',
@@ -288,6 +252,27 @@ const styles = StyleSheet.create({
   signupLink: {
     color: '#f5dd4b',
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: '600',
+  },
+  quickTestContainer: {
+    marginTop: 40,
+    alignItems: 'center',
+  },
+  quickTestTitle: {
+    color: '#666',
+    fontSize: 12,
+    marginBottom: 8,
+  },
+  quickTestButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  quickTestButtonText: {
+    color: '#888',
+    fontSize: 12,
   },
 });

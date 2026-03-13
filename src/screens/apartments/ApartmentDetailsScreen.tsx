@@ -1,103 +1,158 @@
-import React from 'react';
+/**
+ * ApartmentDetailsScreen
+ * Route: ApartmentDetails
+ * Params: { listingId }
+ *
+ * Fetches GET /apartments/listings/:id — full listing detail.
+ * "Book Now" → ApartmentBooking { apartmentId, apartmentName, pricePerNight }
+ */
+import React, { useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Image,
-  TouchableOpacity,
-  Dimensions,
-  StatusBar,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity,
+  ActivityIndicator, Dimensions, StatusBar,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import StarlightBackground from '../../components/StarlightBackground';
+import { apartmentsAPI } from '../../services/api';
+import type { ApartmentListing } from '../../services/api';
 
 const { width, height } = Dimensions.get('window');
 
-export default function ApartmentDetailsScreen({ navigation }: any) {
+export default function ApartmentDetailsScreen({ route, navigation }: any) {
+  const { listingId } = route.params || {};
+  const [listing, setListing] = useState<ApartmentListing | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    if (!listingId) { setError(true); setLoading(false); return; }
+    apartmentsAPI.getListing(listingId)
+      .then(setListing)
+      .catch(() => setError(true))
+      .finally(() => setLoading(false));
+  }, [listingId]);
+
+  if (loading) {
+    return (
+      <View style={s.container}>
+        <StarlightBackground />
+        <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
+        <ActivityIndicator size="large" color="#f5dd4b" style={{ marginTop: 140 }} />
+      </View>
+    );
+  }
+
+  if (error || !listing) {
+    return (
+      <View style={s.container}>
+        <StarlightBackground />
+        <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
+        <View style={s.errorWrap}>
+          <Ionicons name="home-outline" size={64} color="#333" />
+          <Text style={s.errorText}>Apartment not found</Text>
+          <TouchableOpacity style={s.errorBtn} onPress={() => navigation.goBack()}>
+            <Text style={s.errorBtnText}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  // Caution fee shown for transparency (backend calculates it, 10% of base price)
+  const cautionFee = Math.ceil(Number(listing.pricePerNight) * 0.1);
+
   return (
-    <View style={styles.container}>
+    <View style={s.container}>
       <StarlightBackground />
       <StatusBar barStyle="light-content" />
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        <View style={styles.headerContainer}>
-          <Image
-            source={{ uri: 'https://via.placeholder.com/400x300' }}
-            style={styles.headerImage}
-          />
+      <ScrollView style={s.scroll} showsVerticalScrollIndicator={false}>
+        {/* Hero */}
+        <View style={{ width, height: height * 0.35 }}>
           <LinearGradient
-            colors={['transparent', 'rgba(0,0,0,0.8)']}
-            style={styles.headerGradient}
-          />
-          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+            colors={['#1a1500', '#2a2000', '#0d0d0d']}
+            style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+            <View style={s.heroIconRing}>
+              <Ionicons name="home" size={64} color="#f5dd4b" />
+            </View>
+            <View style={s.heroBadges}>
+              <Badge icon="bed-outline" label={`${listing.bedrooms} bed`} />
+              <Badge icon="water-outline" label={`${listing.bathrooms} bath`} />
+              <Badge icon="people-outline" label={`Max ${listing.maxGuests}`} />
+            </View>
+          </LinearGradient>
+          <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
         </View>
 
-        <View style={styles.content}>
-          <Text style={styles.title}>Luxury Loft Downtown</Text>
-          <View style={styles.locationRow}>
-            <Ionicons name="location" size={16} color="#f5dd4b" />
-            <Text style={styles.location}>Victoria Island, Lagos</Text>
+        <View style={s.content}>
+          <Text style={s.title}>{listing.name}</Text>
+          <View style={s.locationRow}>
+            <Ionicons name="location" size={15} color="#f5dd4b" />
+            <Text style={s.locationText}>{listing.address}, {listing.city}, {listing.state}</Text>
           </View>
 
-          <View style={styles.detailsGrid}>
-            <View style={styles.detailCard}>
-              <Ionicons name="bed" size={24} color="#f5dd4b" />
-              <Text style={styles.detailLabel}>Bedrooms</Text>
-              <Text style={styles.detailValue}>3</Text>
-            </View>
-            <View style={styles.detailCard}>
-              <Ionicons name="water" size={24} color="#f5dd4b" />
-              <Text style={styles.detailLabel}>Bathrooms</Text>
-              <Text style={styles.detailValue}>2</Text>
-            </View>
-            <View style={styles.detailCard}>
-              <Ionicons name="resize" size={24} color="#f5dd4b" />
-              <Text style={styles.detailLabel}>Size</Text>
-              <Text style={styles.detailValue}>120m²</Text>
-            </View>
-          </View>
+          {/* About */}
+          <Text style={s.sectionTitle}>About</Text>
+          <Text style={s.description}>{listing.description}</Text>
 
-          <Text style={styles.sectionTitle}>Description</Text>
-          <Text style={styles.description}>
-            Beautiful luxury loft in the heart of Victoria Island. Fully furnished with modern amenities, 
-            stunning city views, and 24/7 security. Perfect for short or long-term stays.
-          </Text>
-
-          <Text style={styles.sectionTitle}>Amenities</Text>
-          <View style={styles.amenitiesGrid}>
-            {['WiFi', 'AC', 'Kitchen', 'Parking', 'Pool', 'Gym'].map((amenity, index) => (
-              <View key={index} style={styles.amenityChip}>
-                <Ionicons name="checkmark-circle" size={16} color="#00C851" />
-                <Text style={styles.amenityText}>{amenity}</Text>
+          {/* Amenities */}
+          {listing.amenities?.length > 0 && (
+            <>
+              <Text style={s.sectionTitle}>Amenities</Text>
+              <View style={s.amenitiesGrid}>
+                {listing.amenities.map((a, i) => (
+                  <View key={i} style={s.amenityChip}>
+                    <Ionicons name="checkmark-circle" size={15} color="#00C851" />
+                    <Text style={s.amenityText}>{a}</Text>
+                  </View>
+                ))}
               </View>
-            ))}
-          </View>
-        </View>
+            </>
+          )}
 
-        <View style={styles.bottomSpacer} />
+          {/* Pricing */}
+          <Text style={s.sectionTitle}>Pricing</Text>
+          <View style={s.pricingCard}>
+            <PriceRow label="Per night" value={`₦${Number(listing.pricePerNight).toLocaleString()}`} />
+            <PriceRow label="Service charge" value="₦400" note="Non-refundable" />
+            <PriceRow label="Caution fee" value={`₦${cautionFee.toLocaleString()}`} note="10% — refundable" muted />
+            <View style={s.divider} />
+            <PriceRow
+              label="Total per night (excl. caution)"
+              value={`₦${(Number(listing.pricePerNight) + 400).toLocaleString()}`}
+              highlight
+            />
+          </View>
+
+          <View style={{ height: 120 }} />
+        </View>
       </ScrollView>
 
-      <View style={styles.bottomContainer}>
-        <View style={styles.priceContainer}>
-          <Text style={styles.priceLabel}>Per Night</Text>
-          <Text style={styles.priceValue}>₦150,000</Text>
+      {/* Book Now bar */}
+      <View style={s.bottomBar}>
+        <View>
+          <Text style={s.bottomLabel}>Per night</Text>
+          <Text style={s.bottomPrice}>₦{Number(listing.pricePerNight).toLocaleString()}</Text>
         </View>
         <TouchableOpacity
-          style={styles.bookButton}
-          onPress={() => navigation.navigate('ApartmentBooking')}
-          activeOpacity={0.8}
-        >
-          <LinearGradient
-            colors={['#f5dd4b', '#d4a017']}
-            style={styles.bookGradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-          >
-            <Text style={styles.bookButtonText}>Book Now</Text>
+          style={s.bookBtn}
+          onPress={() => navigation.navigate('ApartmentBooking', {
+            apartmentId: listing.id,
+            apartmentName: listing.name,
+            pricePerNight: Number(listing.pricePerNight),
+          })}
+          activeOpacity={0.85}>
+          <LinearGradient colors={['#f5dd4b', '#d4a017']} style={s.bookGradient}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+            <Text style={s.bookBtnText}>Book Now</Text>
           </LinearGradient>
         </TouchableOpacity>
       </View>
@@ -105,153 +160,88 @@ export default function ApartmentDetailsScreen({ navigation }: any) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000',
+function Badge({ icon, label }: { icon: any; label: string }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5,
+      backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 12, paddingVertical: 6,
+      borderRadius: 20, borderWidth: 1, borderColor: 'rgba(245,221,75,0.3)' }}>
+      <Ionicons name={icon} size={13} color="#f5dd4b" />
+      <Text style={{ color: '#f5dd4b', fontSize: 12, fontWeight: '600' }}>{label}</Text>
+    </View>
+  );
+}
+
+function PriceRow({ label, value, note, highlight, muted }: {
+  label: string; value: string; note?: string; highlight?: boolean; muted?: boolean;
+}) {
+  return (
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between',
+      alignItems: 'flex-start', paddingVertical: 10 }}>
+      <View style={{ flex: 1 }}>
+        <Text style={{ color: muted ? '#555' : '#888', fontSize: 14 }}>{label}</Text>
+        {note && <Text style={{ color: '#555', fontSize: 11, marginTop: 2 }}>{note}</Text>}
+      </View>
+      <Text style={{
+        color: highlight ? '#f5dd4b' : '#fff',
+        fontSize: highlight ? 17 : 15,
+        fontWeight: highlight ? 'bold' : '600',
+      }}>{value}</Text>
+    </View>
+  );
+}
+
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#000' },
+  scroll: { flex: 1 },
+  backBtn: {
+    position: 'absolute', top: 54, left: 20, zIndex: 10,
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center',
   },
-  scrollView: {
-    flex: 1,
+  heroIconRing: {
+    width: 120, height: 120, borderRadius: 60,
+    backgroundColor: 'rgba(245,221,75,0.1)',
+    justifyContent: 'center', alignItems: 'center', marginBottom: 16,
   },
-  headerContainer: {
-    width: width,
-    height: height * 0.35,
-    position: 'relative',
+  heroBadges: {
+    flexDirection: 'row', gap: 8, position: 'absolute', bottom: 20,
+    flexWrap: 'wrap', paddingHorizontal: 20, justifyContent: 'center',
   },
-  headerImage: {
-    width: '100%',
-    height: '100%',
-  },
-  headerGradient: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: '50%',
-  },
-  backButton: {
-    position: 'absolute',
-    top: 50,
-    left: 20,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  content: {
-    padding: 20,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 8,
-  },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  location: {
-    color: '#888',
-    fontSize: 14,
-    marginLeft: 4,
-  },
-  detailsGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 24,
-  },
-  detailCard: {
-    flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    marginHorizontal: 4,
-  },
-  detailLabel: {
-    color: '#888',
-    fontSize: 12,
-    marginTop: 8,
-  },
-  detailValue: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginTop: 4,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 12,
-  },
-  description: {
-    color: '#ccc',
-    fontSize: 15,
-    lineHeight: 24,
-    marginBottom: 24,
-  },
-  amenitiesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
+  content: { padding: 20 },
+  title: { fontSize: 26, fontWeight: 'bold', color: '#fff', marginBottom: 8 },
+  locationRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 24, gap: 6 },
+  locationText: { color: '#888', fontSize: 14, flex: 1, lineHeight: 20 },
+  sectionTitle: { fontSize: 17, fontWeight: '700', color: '#fff', marginBottom: 12, marginTop: 8 },
+  description: { color: '#bbb', fontSize: 15, lineHeight: 24, marginBottom: 24 },
+  amenitiesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 24 },
   amenityChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 200, 81, 0.1)',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 16,
-    marginRight: 8,
-    marginBottom: 8,
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: 'rgba(0,200,81,0.08)',
+    paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20,
+    borderWidth: 1, borderColor: 'rgba(0,200,81,0.2)',
   },
-  amenityText: {
-    color: '#00C851',
-    fontSize: 12,
-    marginLeft: 4,
+  amenityText: { color: '#00C851', fontSize: 13 },
+  pricingCard: {
+    backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 16, padding: 20,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
   },
-  bottomSpacer: {
-    height: 100,
+  divider: { height: 1, backgroundColor: 'rgba(255,255,255,0.1)', marginVertical: 8 },
+  bottomBar: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    padding: 20, paddingBottom: 36,
+    backgroundColor: 'rgba(0,0,0,0.97)', borderTopWidth: 1, borderTopColor: '#1a1a1a',
   },
-  bottomContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    padding: 20,
-    backgroundColor: 'rgba(0,0,0,0.95)',
-    borderTopWidth: 1,
-    borderTopColor: '#222',
-    alignItems: 'center',
+  bottomLabel: { color: '#888', fontSize: 12 },
+  bottomPrice: { color: '#f5dd4b', fontSize: 26, fontWeight: 'bold' },
+  bookBtn: { borderRadius: 14, overflow: 'hidden' },
+  bookGradient: { paddingHorizontal: 36, paddingVertical: 16 },
+  bookBtnText: { color: '#000', fontSize: 16, fontWeight: 'bold' },
+  errorWrap: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 100 },
+  errorText: { color: '#888', fontSize: 16, marginTop: 16 },
+  errorBtn: {
+    marginTop: 20, backgroundColor: 'rgba(245,221,75,0.1)',
+    borderWidth: 1, borderColor: '#f5dd4b', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 8,
   },
-  priceContainer: {
-    flex: 1,
-  },
-  priceLabel: {
-    color: '#888',
-    fontSize: 12,
-  },
-  priceValue: {
-    color: '#f5dd4b',
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  bookButton: {
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  bookGradient: {
-    paddingHorizontal: 32,
-    paddingVertical: 16,
-  },
-  bookButtonText: {
-    color: '#111',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
+  errorBtnText: { color: '#f5dd4b', fontSize: 14, fontWeight: '600' },
 });

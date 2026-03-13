@@ -1,415 +1,633 @@
+/**
+ * api.ts — D'Lifestyle Frontend API Service
+ *
+ * Aligned 1-to-1 with the NestJS backend:
+ *   POST /auth/register             → authAPI.register
+ *   POST /auth/login                → authAPI.login
+ *   POST /auth/refresh              → authAPI.refreshToken
+ *   GET  /events                    → eventsAPI.getEvents
+ *   GET  /events/:id                → eventsAPI.getEventById
+ *   POST /bookings                  → bookingsAPI.createBooking
+ *   GET  /bookings                  → bookingsAPI.getMyBookings
+ *   GET  /bookings/:id              → bookingsAPI.getBookingById
+ *   PATCH /bookings/:id/status      → bookingsAPI.updateStatus
+ *   POST /bookings/:id/checkin      → bookingsAPI.checkIn
+ *   POST /tickets                   → ticketsAPI.createTicket
+ *   GET  /tickets                   → ticketsAPI.getMyTickets
+ *   GET  /tickets/:id               → ticketsAPI.getTicket
+ *   PATCH /tickets/:id/cancel       → ticketsAPI.cancelTicket
+ *   POST /tables                    → tablesAPI.bookTable
+ *   GET  /tables                    → tablesAPI.getMyBookings
+ *   GET  /tables/:id                → tablesAPI.getBooking
+ *   GET  /tables/venue/:venueId     → tableListingsAPI.getVenueTables
+ *   POST /apartments                → apartmentsAPI.bookApartment
+ *   GET  /apartments                → apartmentsAPI.getMyBookings
+ *   GET  /apartments/:id            → apartmentsAPI.getBooking
+ *   GET  /apartments/listings       → apartmentsAPI.getListings
+ *   GET  /apartments/listings/:id   → apartmentsAPI.getListing
+ *   POST /cars                      → carsAPI.rentCar
+ *   GET  /cars                      → carsAPI.getMyRentals
+ *   GET  /cars/:id                  → carsAPI.getRental
+ *   GET  /cars/listings             → carsAPI.getListings
+ *   GET  /cars/listings/:id         → carsAPI.getListing
+ *   POST /payments                  → paymentsAPI.processPayment
+ *   POST /payments/refund           → paymentsAPI.refundPayment
+ *   POST /queues                    → queuesAPI.joinQueue
+ *   GET  /queues/position/:id       → queuesAPI.getQueuePosition
+ *   POST /queues/:id/checkin        → queuesAPI.checkIn
+ *   POST /queues/:id/cancel         → queuesAPI.cancel
+ *
+ * Business rules enforced on the frontend:
+ *   - Service charge ₦400 (non-refundable) is added at checkout
+ *   - Platform commission 3% is VENUE-PAID and NOT shown to user
+ *   - Total shown to user = basePrice + ₦400 only
+ *   - Payment methods: 'wallet' | 'paystack' (NO Stripe)
+ *   - Auth response shape: { accessToken, refreshToken, user: { id, email, firstName, lastName, role } }
+ */
+
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import { useStore } from '../store/useStore';
 
-const API_BASE_URL = 'https://api.clubsync.app';
+// ─── Config ───────────────────────────────────────────────────────────────────
+
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
+export const SERVICE_CHARGE = 400; // ₦400 fixed, non-refundable, backend-enforced
+
+// ─── Axios Client ─────────────────────────────────────────────────────────────
 
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   timeout: 15000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  headers: { 'Content-Type': 'application/json' },
 });
 
+// Attach JWT on every request
 apiClient.interceptors.request.use(
   (config) => {
-    const token = useStore.getState().authToken;
+    const token = useStore.getState().accessToken;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
+// Handle 401 — auto-logout
 apiClient.interceptors.response.use(
   (response) => response,
-  (error: AxiosError) => {
+  async (error: AxiosError) => {
     if (error.response?.status === 401) {
       useStore.getState().logout();
     }
     return Promise.reject(error);
-  }
+  },
 );
 
-// ============================================
-// AUTH API
-// ============================================
-export const authAPI = {
-  login: async (email: string, password: string) => {
-    const response = await apiClient.post('/users/login', { email, password });
-    return response.data;
-  },
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-  signup: async (data: {
-    name: string;
+export interface AuthUser {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+}
+
+export interface AuthResponse {
+  accessToken: string;
+  refreshToken: string;
+  user: AuthUser;
+}
+
+export interface BackendBooking {
+  id: string;
+  bookingType: 'ticket' | 'table' | 'apartment' | 'car';
+  status: string;
+  paymentStatus: string;
+  basePrice: number;
+  serviceCharge: number;       // always 400
+  platformCommission: number;  // 3% venue-paid, display only for admin
+  totalAmount: number;         // basePrice + serviceCharge
+  guestCount: number;
+  resourceId: string;
+  metadata?: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+  completedAt?: string;
+  cancelledAt?: string;
+}
+
+export interface BackendEvent {
+  id: string;
+  name: string;
+  description: string;
+  venueId: string;
+  startDate: string;
+  endDate: string;
+  capacity: number;
+  djs?: string[];
+  genre?: string;
+  dresscode?: string;
+  status: string;
+  createdAt: string;
+}
+
+export interface PaymentTransaction {
+  id: string;
+  bookingId: string;
+  amount: number;
+  status: string;
+  paymentMethod: 'wallet' | 'paystack';
+  completedAt?: string;
+  createdAt: string;
+}
+
+export interface QueueEntry {
+  id: string;
+  venueId: string;
+  position: number;
+  status: string;
+  createdAt: string;
+}
+
+export interface ApartmentListing {
+  id: string;
+  name: string;
+  description: string;
+  address: string;
+  city: string;
+  state: string;
+  pricePerNight: number;
+  bedrooms: number;
+  bathrooms: number;
+  maxGuests: number;
+  amenities: string[];
+  images: string[];
+  isActive: boolean;
+  managedBy?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CarListing {
+  id: string;
+  make: string;
+  model: string;
+  year: number;
+  color: string;
+  plateNumber: string;
+  transmission: string;  // 'automatic' | 'manual'
+  category: string;      // 'sedan' | 'suv' | 'luxury' | 'van'
+  seats: number;
+  pricePerDay: number;
+  description: string;
+  features: string[];
+  images: string[];
+  city: string;
+  state: string;
+  withDriver: boolean;
+  isActive: boolean;
+  managedBy?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TableListing {
+  id: string;
+  venueId: string;
+  name: string;
+  category: 'standard' | 'vip' | 'vvip' | 'booth' | 'private';
+  capacity: number;
+  price: number;
+  description: string;
+  features: string[];
+  available: boolean;
+}
+
+// ─── Auth API ─────────────────────────────────────────────────────────────────
+// Routes: POST /auth/register, POST /auth/login, POST /auth/refresh
+
+export const authAPI = {
+  /** POST /auth/register */
+  register: async (data: {
     email: string;
     password: string;
-    address?: string;
+    firstName: string;
+    lastName: string;
     phone?: string;
-  }) => {
-    const response = await apiClient.post('/users/signup', {
-      ...data,
-      authProvider: 'email',
-    });
+  }): Promise<AuthResponse> => {
+    const response = await apiClient.post('/auth/register', data);
     return response.data;
   },
 
-  socialLogin: async (provider: 'google' | 'apple', token: string) => {
-    const response = await apiClient.post('/users/social-login', {
-      provider,
-      token,
-    });
+  /** POST /auth/login */
+  login: async (email: string, password: string): Promise<AuthResponse> => {
+    const response = await apiClient.post('/auth/login', { email, password });
     return response.data;
   },
 
-  forgotPassword: async (email: string) => {
-    const response = await apiClient.post('/users/forgot-password', { email });
-    return response.data;
-  },
-
-  resetPassword: async (token: string, newPassword: string) => {
-    const response = await apiClient.post('/users/reset-password', {
-      token,
-      newPassword,
-    });
+  /** POST /auth/refresh */
+  refreshToken: async (refreshToken: string): Promise<AuthResponse> => {
+    const response = await apiClient.post('/auth/refresh', { refreshToken });
     return response.data;
   },
 };
 
-// ============================================
-// EVENTS API
-// ============================================
+// ─── Events API ───────────────────────────────────────────────────────────────
+// Routes: GET /events, GET /events/:id
+
 export const eventsAPI = {
+  /** GET /events */
   getEvents: async (params?: {
-    location?: string;
-    category?: string;
-    startDate?: string;
-    endDate?: string;
-    page?: number;
-    pageSize?: number;
-  }) => {
+    limit?: number;
+    offset?: number;
+  }): Promise<{ events: BackendEvent[]; total: number }> => {
     const response = await apiClient.get('/events', { params });
     return response.data;
   },
 
-  getEventById: async (eventId: string) => {
+  /** GET /events/:id */
+  getEventById: async (eventId: string): Promise<BackendEvent> => {
     const response = await apiClient.get(`/events/${eventId}`);
-    return response.data;
-  },
-
-  getEventMenu: async (eventId: string) => {
-    const response = await apiClient.get(`/events/${eventId}/menu`);
-    return response.data;
-  },
-
-  getEventAmbience: async (eventId: string) => {
-    const response = await apiClient.get(`/events/${eventId}/ambience`);
     return response.data;
   },
 };
 
-// ============================================
-// BOOKINGS API
-// ============================================
+// ─── Bookings API ─────────────────────────────────────────────────────────────
+// Routes: POST /bookings, GET /bookings, GET /bookings/:id,
+//         PATCH /bookings/:id/status, POST /bookings/:id/checkin
+
 export const bookingsAPI = {
+  /**
+   * POST /bookings
+   * Creates a booking. userId is derived from JWT on the backend.
+   * totalAmount = basePrice + 400 (service charge, backend calculates it)
+   */
   createBooking: async (data: {
-    userId: string;
-    eventId: string;
-    bookingType: 'ticket' | 'table';
-    quantity?: number;
-    tableId?: string;
-    amountDue: number;
-  }) => {
-    const response = await apiClient.post('/bookings/create', data);
+    bookingType: 'ticket' | 'table' | 'apartment' | 'car';
+    resourceId: string;
+    basePrice: number;
+    guestCount: number;
+    metadata?: Record<string, any>;
+  }): Promise<BackendBooking> => {
+    const response = await apiClient.post('/bookings', data);
     return response.data;
   },
 
+  /**
+   * POST /bookings (group variant)
+   * Initiates a group booking → status = PENDING_GROUP_PAYMENT
+   * 8-minute countdown enforced by backend GroupBookingCountdownService
+   */
   createGroupBooking: async (data: {
-    userId: string;
-    eventId: string;
-    taggedUsers: string[];
-    maxCapacity: number;
-    splits: Record<string, number>;
-  }) => {
-    const response = await apiClient.post('/bookings/group/create', data);
+    bookingType: 'ticket' | 'table' | 'apartment' | 'car';
+    resourceId: string;
+    basePrice: number;
+    guestCount: number;
+    participantIds: string[];
+    metadata?: Record<string, any>;
+  }): Promise<BackendBooking> => {
+    const response = await apiClient.post('/bookings', {
+      ...data,
+      isGroup: true,
+    });
     return response.data;
   },
 
-  getMyBookings: async (userId: string) => {
-    const response = await apiClient.get(`/bookings/user/${userId}`);
+  /** GET /bookings — returns bookings for the authenticated user (JWT-derived) */
+  getMyBookings: async (params?: {
+    limit?: number;
+    offset?: number;
+  }): Promise<{ bookings: BackendBooking[]; total: number }> => {
+    const response = await apiClient.get('/bookings', { params });
     return response.data;
   },
 
-  getBookingById: async (bookingId: string) => {
+  /** GET /bookings/:id */
+  getBookingById: async (bookingId: string): Promise<BackendBooking> => {
     const response = await apiClient.get(`/bookings/${bookingId}`);
     return response.data;
   },
 
-  cancelBooking: async (bookingId: string) => {
-    const response = await apiClient.post(`/bookings/${bookingId}/cancel`);
-    return response.data;
-  },
-
-  checkInBooking: async (bookingId: string, qrCode: string) => {
-    const response = await apiClient.post(`/bookings/${bookingId}/check-in`, {
-      qrCode,
+  /** PATCH /bookings/:id/status */
+  updateStatus: async (
+    bookingId: string,
+    status: 'CONFIRMED' | 'CHECKED_IN' | 'COMPLETED' | 'CANCELLED',
+    reason?: string,
+  ): Promise<BackendBooking> => {
+    const response = await apiClient.patch(`/bookings/${bookingId}/status`, {
+      status,
+      reason,
     });
     return response.data;
   },
 
-  acceptGroupInvite: async (bookingId: string) => {
-    const response = await apiClient.post(
-      `/bookings/group/${bookingId}/accept`
-    );
-    return response.data;
-  },
-
-  declineGroupInvite: async (bookingId: string) => {
-    const response = await apiClient.post(
-      `/bookings/group/${bookingId}/decline`
-    );
-    return response.data;
-  },
-
-  contributeToGroupBooking: async (bookingId: string, amount: number) => {
-    const response = await apiClient.post(
-      `/bookings/group/${bookingId}/contribute`,
-      { amount }
-    );
+  /** POST /bookings/:id/checkin */
+  checkIn: async (bookingId: string): Promise<BackendBooking> => {
+    const response = await apiClient.post(`/bookings/${bookingId}/checkin`);
     return response.data;
   },
 };
 
-// ============================================
-// APARTMENTS API - NEW
-// ============================================
+// ─── Tickets API ──────────────────────────────────────────────────────────────
+// Routes: POST /tickets, GET /tickets, GET /tickets/:id, PATCH /tickets/:id/cancel
+
+export const ticketsAPI = {
+  /**
+   * POST /tickets
+   * Creates a ticket booking. userId derived from JWT.
+   * totalAmount = totalPrice + 400 (service charge)
+   */
+  createTicket: async (data: {
+    eventId: string;
+    quantity: number;
+    totalPrice: number; // basePrice * quantity, before service charge
+  }): Promise<BackendBooking> => {
+    const response = await apiClient.post('/tickets', data);
+    return response.data;
+  },
+
+  /** GET /tickets — returns tickets for authenticated user */
+  getMyTickets: async (params?: {
+    limit?: number;
+    offset?: number;
+  }): Promise<{ tickets: BackendBooking[]; total: number }> => {
+    const response = await apiClient.get('/tickets', { params });
+    return response.data;
+  },
+
+  /** GET /tickets/:id */
+  getTicket: async (ticketId: string): Promise<BackendBooking> => {
+    const response = await apiClient.get(`/tickets/${ticketId}`);
+    return response.data;
+  },
+
+  /** PATCH /tickets/:id/cancel */
+  cancelTicket: async (ticketId: string): Promise<BackendBooking> => {
+    const response = await apiClient.patch(`/tickets/${ticketId}/cancel`);
+    return response.data;
+  },
+};
+
+// ─── Tables API ───────────────────────────────────────────────────────────────
+// Routes: POST /tables, GET /tables, GET /tables/:id
+
+export const tablesAPI = {
+  /**
+   * POST /tables
+   * Creates a table booking. userId derived from JWT.
+   * totalAmount = price + 400 (service charge)
+   */
+  bookTable: async (data: {
+    venueId: string;
+    tableId: string;
+    guestCount: number;
+    bookingDate: string;
+    price: number;
+  }): Promise<BackendBooking> => {
+    const response = await apiClient.post('/tables', data);
+    return response.data;
+  },
+
+  /** GET /tables — returns table bookings for authenticated user */
+  getMyBookings: async (params?: {
+    limit?: number;
+    offset?: number;
+  }): Promise<{ bookings: BackendBooking[]; total: number }> => {
+    const response = await apiClient.get('/tables', { params });
+    return response.data;
+  },
+
+  /** GET /tables/:id */
+  getBooking: async (bookingId: string): Promise<BackendBooking> => {
+    const response = await apiClient.get(`/tables/${bookingId}`);
+    return response.data;
+  },
+};
+
+// ─── Table Listings API ───────────────────────────────────────────────────────
+// Route: GET /tables/venue/:venueId
+
+export const tableListingsAPI = {
+  /**
+   * GET /tables/venue/:venueId
+   * Returns all active table listings for a venue with live availability.
+   * available=false means a CONFIRMED booking already exists for that table.
+   */
+  getVenueTables: async (
+    venueId: string,
+  ): Promise<{ tables: TableListing[]; total: number; venueId: string }> => {
+    const response = await apiClient.get(`/tables/venue/${venueId}`);
+    return response.data;
+  },
+};
+
+// ─── Apartments API ───────────────────────────────────────────────────────────
+// Routes: POST /apartments, GET /apartments, GET /apartments/:id,
+//         GET /apartments/listings, GET /apartments/listings/:id
+
 export const apartmentsAPI = {
-  getApartments: async (params?: {
-    location?: string;
+  // ── Listings (browse available apartments) ────────────────────────────────
+
+  /**
+   * GET /apartments/listings
+   * Returns available apartment listings (not bookings).
+   * Query: limit, offset, city, minPrice, maxPrice, bedrooms
+   */
+  getListings: async (params?: {
+    limit?: number;
+    offset?: number;
+    city?: string;
     minPrice?: number;
     maxPrice?: number;
     bedrooms?: number;
-    bathrooms?: number;
-    page?: number;
-    pageSize?: number;
-  }) => {
+  }): Promise<{ listings: ApartmentListing[]; total: number }> => {
+    const response = await apiClient.get('/apartments/listings', { params });
+    return response.data;
+  },
+
+  /** GET /apartments/listings/:id */
+  getListing: async (listingId: string): Promise<ApartmentListing> => {
+    const response = await apiClient.get(`/apartments/listings/${listingId}`);
+    return response.data;
+  },
+
+  // ── Bookings ──────────────────────────────────────────────────────────────
+
+  /**
+   * POST /apartments
+   * Creates an apartment booking. userId derived from JWT.
+   * totalAmount = price + 400 (service charge)
+   * cautionFee = 10% of price (in metadata, backend-calculated)
+   */
+  bookApartment: async (data: {
+    apartmentId: string;
+    checkInDate: string;
+    checkOutDate: string;
+    price: number;
+  }): Promise<BackendBooking> => {
+    const response = await apiClient.post('/apartments', data);
+    return response.data;
+  },
+
+  /** GET /apartments — returns apartment bookings for authenticated user */
+  getMyBookings: async (params?: {
+    limit?: number;
+    offset?: number;
+  }): Promise<{ bookings: BackendBooking[]; total: number }> => {
     const response = await apiClient.get('/apartments', { params });
     return response.data;
   },
 
-  getApartmentById: async (apartmentId: string) => {
-    const response = await apiClient.get(`/apartments/${apartmentId}`);
-    return response.data;
-  },
-
-  bookApartment: async (data: {
-    userId: string;
-    apartmentId: string;
-    checkInDate: string;
-    checkOutDate: string;
-    guests: number;
-    totalAmount: number;
-  }) => {
-    const response = await apiClient.post('/apartments/book', data);
-    return response.data;
-  },
-
-  getApartmentReviews: async (apartmentId: string) => {
-    const response = await apiClient.get(`/apartments/${apartmentId}/reviews`);
-    return response.data;
-  },
-
-  addApartmentReview: async (
-    apartmentId: string,
-    data: {
-      userId: string;
-      rating: number;
-      comment: string;
-    }
-  ) => {
-    const response = await apiClient.post(
-      `/apartments/${apartmentId}/reviews`,
-      data
-    );
+  /** GET /apartments/:id */
+  getBooking: async (bookingId: string): Promise<BackendBooking> => {
+    const response = await apiClient.get(`/apartments/${bookingId}`);
     return response.data;
   },
 };
 
-// ============================================
-// CAR RENTALS API - NEW
-// ============================================
+// ─── Cars API ─────────────────────────────────────────────────────────────────
+// Routes: POST /cars, GET /cars, GET /cars/:id,
+//         GET /cars/listings, GET /cars/listings/:id
+
 export const carsAPI = {
-  getCars: async (params?: {
-    location?: string;
+  // ── Listings (browse available cars) ──────────────────────────────────────
+
+  /**
+   * GET /cars/listings
+   * Returns available car listings (not rentals).
+   * Query: limit, offset, minPrice, maxPrice, category, transmission
+   */
+  getListings: async (params?: {
+    limit?: number;
+    offset?: number;
     minPrice?: number;
     maxPrice?: number;
-    carType?: string;
-    transmission?: 'automatic' | 'manual';
-    page?: number;
-    pageSize?: number;
-  }) => {
+    category?: string;
+    transmission?: string;
+  }): Promise<{ listings: CarListing[]; total: number }> => {
+    const response = await apiClient.get('/cars/listings', { params });
+    return response.data;
+  },
+
+  /** GET /cars/listings/:id */
+  getListing: async (listingId: string): Promise<CarListing> => {
+    const response = await apiClient.get(`/cars/listings/${listingId}`);
+    return response.data;
+  },
+
+  // ── Rentals ───────────────────────────────────────────────────────────────
+
+  /**
+   * POST /cars
+   * Creates a car rental booking. userId derived from JWT.
+   * totalAmount = price + 400 (service charge)
+   * cautionFee = 20% of price (in metadata, backend-calculated)
+   */
+  rentCar: async (data: {
+    carId: string;
+    pickupDate: string;
+    returnDate: string;
+    price: number;
+    driverLicense: string;
+  }): Promise<BackendBooking> => {
+    const response = await apiClient.post('/cars', data);
+    return response.data;
+  },
+
+  /** GET /cars — returns car rentals for authenticated user */
+  getMyRentals: async (params?: {
+    limit?: number;
+    offset?: number;
+  }): Promise<{ rentals: BackendBooking[]; total: number }> => {
     const response = await apiClient.get('/cars', { params });
     return response.data;
   },
 
-  getCarById: async (carId: string) => {
-    const response = await apiClient.get(`/cars/${carId}`);
-    return response.data;
-  },
-
-  bookCar: async (data: {
-    userId: string;
-    carId: string;
-    pickupDate: string;
-    returnDate: string;
-    pickupLocation: string;
-    returnLocation: string;
-    totalAmount: number;
-  }) => {
-    const response = await apiClient.post('/cars/book', data);
-    return response.data;
-  },
-
-  getCarReviews: async (carId: string) => {
-    const response = await apiClient.get(`/cars/${carId}/reviews`);
-    return response.data;
-  },
-
-  addCarReview: async (
-    carId: string,
-    data: {
-      userId: string;
-      rating: number;
-      comment: string;
-    }
-  ) => {
-    const response = await apiClient.post(`/cars/${carId}/reviews`, data);
+  /** GET /cars/:id */
+  getRental: async (rentalId: string): Promise<BackendBooking> => {
+    const response = await apiClient.get(`/cars/${rentalId}`);
     return response.data;
   },
 };
 
-// ============================================
-// PAYMENTS API
-// ============================================
+// ─── Payments API ─────────────────────────────────────────────────────────────
+// Routes: POST /payments, POST /payments/refund
+// Payment methods: 'wallet' | 'paystack' ONLY (no Stripe)
+// When amount >= booking.totalAmount → backend sets paymentStatus=FULLY_PAID & status=CONFIRMED
+
 export const paymentsAPI = {
-  initiatePayment: async (data: {
+  /**
+   * POST /payments
+   * Processes a payment for a booking.
+   * If wallet: backend debits wallet and updates booking.
+   * If paystack: paystackReference must be provided after Paystack SDK confirms payment.
+   * When totalAmount is reached → booking auto-confirms.
+   */
+  processPayment: async (data: {
     bookingId: string;
-    bookingType: 'event' | 'apartment' | 'car';
     amount: number;
-    currency: 'NGN' | 'USD' | 'EUR' | 'GBP';
-    paymentMethod: 'stripe' | 'paystack';
-  }) => {
-    const response = await apiClient.post('/payments/initiate', data);
+    method: 'wallet' | 'paystack';
+    paystackReference?: string; // required when method='paystack'
+  }): Promise<PaymentTransaction> => {
+    const response = await apiClient.post('/payments', data);
     return response.data;
   },
 
-  verifyPayment: async (paymentReference: string) => {
-    const response = await apiClient.post('/payments/verify', {
-      paymentReference,
-    });
-    return response.data;
-  },
-
-  getPaymentStatus: async (userId: string) => {
-    const response = await apiClient.get('/payments/status', {
-      params: { userId },
-    });
-    return response.data;
-  },
-
-  getPaymentHistory: async (userId: string) => {
-    const response = await apiClient.get(`/payments/history/${userId}`);
+  /** POST /payments/refund — refunds a payment back to wallet */
+  refundPayment: async (paymentId: string): Promise<PaymentTransaction> => {
+    const response = await apiClient.post('/payments/refund', { paymentId });
     return response.data;
   },
 };
 
-// ============================================
-// QUEUE API
-// ============================================
-export const queueAPI = {
-  joinQueue: async (eventId: string, userId: string) => {
-    const response = await apiClient.post('/queue/join', { eventId, userId });
+// ─── Queues API ───────────────────────────────────────────────────────────────
+// Routes: POST /queues, GET /queues/position/:id,
+//         POST /queues/:id/checkin, POST /queues/:id/cancel
+
+export const queuesAPI = {
+  /** POST /queues — join queue for a venue. userId derived from JWT. */
+  joinQueue: async (venueId: string): Promise<QueueEntry> => {
+    const response = await apiClient.post('/queues', { venueId });
     return response.data;
   },
 
-  leaveQueue: async (queueId: string) => {
-    const response = await apiClient.post(`/queue/${queueId}/leave`);
+  /** GET /queues/position/:queueId — get current queue position */
+  getQueuePosition: async (queueId: string): Promise<QueueEntry> => {
+    const response = await apiClient.get(`/queues/position/${queueId}`);
     return response.data;
   },
 
-  getQueuePosition: async (queueId: string) => {
-    const response = await apiClient.get(`/queue/${queueId}/position`);
+  /** POST /queues/:queueId/checkin — check in from queue */
+  checkIn: async (queueId: string): Promise<QueueEntry> => {
+    const response = await apiClient.post(`/queues/${queueId}/checkin`);
+    return response.data;
+  },
+
+  /** POST /queues/:queueId/cancel — leave queue */
+  cancelQueue: async (queueId: string): Promise<{ success: boolean }> => {
+    const response = await apiClient.post(`/queues/${queueId}/cancel`);
     return response.data;
   },
 };
 
-// ============================================
-// USER API
-// ============================================
-export const userAPI = {
-  getProfile: async (userId: string) => {
-    const response = await apiClient.get(`/users/${userId}`);
-    return response.data;
-  },
+// ─── Pricing Helpers ──────────────────────────────────────────────────────────
 
-  updateProfile: async (
-    userId: string,
-    data: {
-      name?: string;
-      phone?: string;
-      address?: string;
-      profileImage?: string;
-    }
-  ) => {
-    const response = await apiClient.put(`/users/${userId}`, data);
-    return response.data;
-  },
-};
-
-// ============================================
-// WALLET API
-// ============================================
-export const walletAPI = {
-  getBalance: async (userId: string) => {
-    const response = await apiClient.get(`/wallet/${userId}/balance`);
-    return response.data;
-  },
-
-  addFunds: async (userId: string, amount: number) => {
-    const response = await apiClient.post(`/wallet/${userId}/add`, { amount });
-    return response.data;
-  },
-
-  getTransactions: async (userId: string) => {
-    const response = await apiClient.get(`/wallet/${userId}/transactions`);
-    return response.data;
-  },
-};
-
-// ============================================
-// NOTIFICATIONS API
-// ============================================
-export const notificationsAPI = {
-  registerDevice: async (userId: string, deviceToken: string) => {
-    const response = await apiClient.post('/notifications/register', {
-      userId,
-      deviceToken,
-    });
-    return response.data;
-  },
-
-  getNotifications: async (userId: string) => {
-    const response = await apiClient.get(`/notifications/${userId}`);
-    return response.data;
-  },
-
-  markAsRead: async (notificationId: string) => {
-    const response = await apiClient.put(
-      `/notifications/${notificationId}/read`
-    );
-    return response.data;
-  },
-};
+/**
+ * Calculate what the user sees at checkout.
+ * Per business rules:
+ *   - Service charge = ₦400 (fixed, non-refundable, client-displayed)
+ *   - Platform commission = 3% of basePrice (venue-paid, NOT shown to user)
+ *   - Total shown = basePrice + ₦400
+ */
+export const calculateCheckoutTotal = (basePrice: number) => ({
+  basePrice,
+  serviceCharge: SERVICE_CHARGE,
+  total: basePrice + SERVICE_CHARGE,
+  // For reference only — do NOT display to user
+  platformCommission: basePrice * 0.03,
+  venueNet: basePrice - basePrice * 0.03,
+});
 
 export default apiClient;

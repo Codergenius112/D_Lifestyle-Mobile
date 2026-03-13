@@ -1,0 +1,6613 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+assets/
+  adaptive-icon.png
+  favicon.png
+  icon.png
+  splash-icon.png
+src/
+  components/
+    StarlightBackground.tsx
+  navigation/
+    AppNavigator.tsx
+  screens/
+    apartments/
+      ApartmentBookingScreen.tsx
+      ApartmentDetailsScreen.tsx
+      ApartmentListScreen.tsx
+    auth/
+      LoginScreen.tsx
+      OnboardingScreen.tsx
+      SignUpScreen.tsx
+    bookings/
+      BookingFlowScreen.tsx
+      GroupBookingScreen.tsx
+    cars/
+      CarBookingScreen.tsx
+      CarDetailsScreen.tsx
+      CarListScreen.tsx
+    events/
+      EventDetailsScreen.tsx
+    main/
+      BookingsScreen.tsx
+      DiscoverScreen.tsx
+      HomeScreen.tsx
+      ProfileScreen.tsx
+    payments/
+      PaymentScreen.tsx
+    queue/
+      QueueScreen.tsx
+    safety/
+      EmergencySOSScreen.tsx
+    settings/
+      SettingsScreen.tsx
+    tickets/
+      TicketScreen.tsx
+    wallet/
+      WalletScreen.tsx
+  services/
+    api
+    api.ts
+  store/
+    useStore.ts
+.gitignore
+app.json
+App.tsx
+index.ts
+package.json
+tsconfig.json
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="src/components/StarlightBackground.tsx">
+import React, { useEffect, useRef } from 'react';
+import { View, StyleSheet, Animated, Dimensions } from 'react-native';
+import Svg, { Circle } from 'react-native-svg';
+
+const { width, height } = Dimensions.get('window');
+
+interface StarProps {
+  cx: number;
+  cy: number;
+  r: number;
+  opacity: Animated.Value;
+  translateY: Animated.Value;
+}
+
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+
+const Star: React.FC<StarProps> = ({ cx, cy, r, opacity, translateY }) => {
+  return (
+    <AnimatedCircle
+      cx={cx}
+      cy={cy}
+      r={r}
+      fill="white"
+      opacity={opacity}
+      translateY={translateY}
+    />
+  );
+};
+
+const NUM_STARS = 150;
+
+export default function StarlightBackground() {
+  const starsRef = useRef<Array<{
+    id: number;
+    cx: number;
+    cy: number;
+    r: number;
+    opacity: Animated.Value;
+    translateY: Animated.Value;
+    twinkleDelay: number;
+    floatDelay: number;
+  }>>([]);
+
+  if (starsRef.current.length === 0) {
+    starsRef.current = Array.from({ length: NUM_STARS }).map((_, i) => ({
+      id: i,
+      cx: Math.random() * width,
+      cy: Math.random() * height,
+      r: Math.random() * 2 + 0.5,
+      opacity: new Animated.Value(Math.random() * 0.5 + 0.3),
+      translateY: new Animated.Value(0),
+      twinkleDelay: Math.random() * 2000,
+      floatDelay: Math.random() * 3000,
+    }));
+  }
+
+  useEffect(() => {
+    const animations: Animated.CompositeAnimation[] = [];
+
+    starsRef.current.forEach((star) => {
+      const twinkleAnimation = Animated.loop(
+        Animated.sequence([
+          Animated.delay(star.twinkleDelay),
+          Animated.timing(star.opacity, {
+            toValue: Math.random() * 0.3 + 0.1,
+            duration: 1000 + Math.random() * 1500,
+            useNativeDriver: true,
+          }),
+          Animated.timing(star.opacity, {
+            toValue: Math.random() * 0.5 + 0.5,
+            duration: 1000 + Math.random() * 1500,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+
+      const floatAnimation = Animated.loop(
+        Animated.sequence([
+          Animated.delay(star.floatDelay),
+          Animated.timing(star.translateY, {
+            toValue: -10 - Math.random() * 20,
+            duration: 3000 + Math.random() * 2000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(star.translateY, {
+            toValue: 0,
+            duration: 3000 + Math.random() * 2000,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+
+      twinkleAnimation.start();
+      floatAnimation.start();
+      
+      animations.push(twinkleAnimation, floatAnimation);
+    });
+
+    return () => {
+      animations.forEach((anim) => anim.stop());
+    };
+  }, []);
+
+  return (
+    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+      <Svg height="100%" width="100%">
+        {starsRef.current.map((star) => (
+          <Star
+            key={star.id}
+            cx={star.cx}
+            cy={star.cy}
+            r={star.r}
+            opacity={star.opacity}
+            translateY={star.translateY}
+          />
+        ))}
+      </Svg>
+    </View>
+  );
+}
+</file>
+
+<file path="src/screens/apartments/ApartmentBookingScreen.tsx">
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import StarlightBackground from '../../components/StarlightBackground';
+
+export default function ApartmentBookingScreen({ navigation }: any) {
+  return (
+    <View style={styles.container}>
+      <StarlightBackground />
+      
+      <TouchableOpacity 
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
+        <Ionicons name="arrow-back" size={24} color="#fff" />
+      </TouchableOpacity>
+
+      <View style={styles.content}>
+        <Ionicons name="calendar-outline" size={64} color="#f5dd4b" />
+        <Text style={styles.title}>Apartment Booking</Text>
+        <Text style={styles.subtitle}>Coming Soon...</Text>
+        <Text style={styles.description}>
+          Select dates and complete your apartment reservation
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  title: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginTop: 20,
+    marginBottom: 8,
+  },
+  subtitle: {
+    color: '#f5dd4b',
+    fontSize: 18,
+    marginBottom: 8,
+  },
+  description: {
+    color: '#888',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+});
+</file>
+
+<file path="src/screens/apartments/ApartmentDetailsScreen.tsx">
+import React from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Image,
+  TouchableOpacity,
+  Dimensions,
+  StatusBar,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import StarlightBackground from '../../components/StarlightBackground';
+
+const { width, height } = Dimensions.get('window');
+
+export default function ApartmentDetailsScreen({ navigation }: any) {
+  return (
+    <View style={styles.container}>
+      <StarlightBackground />
+      <StatusBar barStyle="light-content" />
+
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        <View style={styles.headerContainer}>
+          <Image
+            source={{ uri: 'https://via.placeholder.com/400x300' }}
+            style={styles.headerImage}
+          />
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.8)']}
+            style={styles.headerGradient}
+          />
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.content}>
+          <Text style={styles.title}>Luxury Loft Downtown</Text>
+          <View style={styles.locationRow}>
+            <Ionicons name="location" size={16} color="#f5dd4b" />
+            <Text style={styles.location}>Victoria Island, Lagos</Text>
+          </View>
+
+          <View style={styles.detailsGrid}>
+            <View style={styles.detailCard}>
+              <Ionicons name="bed" size={24} color="#f5dd4b" />
+              <Text style={styles.detailLabel}>Bedrooms</Text>
+              <Text style={styles.detailValue}>3</Text>
+            </View>
+            <View style={styles.detailCard}>
+              <Ionicons name="water" size={24} color="#f5dd4b" />
+              <Text style={styles.detailLabel}>Bathrooms</Text>
+              <Text style={styles.detailValue}>2</Text>
+            </View>
+            <View style={styles.detailCard}>
+              <Ionicons name="resize" size={24} color="#f5dd4b" />
+              <Text style={styles.detailLabel}>Size</Text>
+              <Text style={styles.detailValue}>120m²</Text>
+            </View>
+          </View>
+
+          <Text style={styles.sectionTitle}>Description</Text>
+          <Text style={styles.description}>
+            Beautiful luxury loft in the heart of Victoria Island. Fully furnished with modern amenities, 
+            stunning city views, and 24/7 security. Perfect for short or long-term stays.
+          </Text>
+
+          <Text style={styles.sectionTitle}>Amenities</Text>
+          <View style={styles.amenitiesGrid}>
+            {['WiFi', 'AC', 'Kitchen', 'Parking', 'Pool', 'Gym'].map((amenity, index) => (
+              <View key={index} style={styles.amenityChip}>
+                <Ionicons name="checkmark-circle" size={16} color="#00C851" />
+                <Text style={styles.amenityText}>{amenity}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.bottomSpacer} />
+      </ScrollView>
+
+      <View style={styles.bottomContainer}>
+        <View style={styles.priceContainer}>
+          <Text style={styles.priceLabel}>Per Night</Text>
+          <Text style={styles.priceValue}>₦150,000</Text>
+        </View>
+        <TouchableOpacity
+          style={styles.bookButton}
+          onPress={() => navigation.navigate('ApartmentBooking')}
+          activeOpacity={0.8}
+        >
+          <LinearGradient
+            colors={['#f5dd4b', '#d4a017']}
+            style={styles.bookGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+          >
+            <Text style={styles.bookButtonText}>Book Now</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  headerContainer: {
+    width: width,
+    height: height * 0.35,
+    position: 'relative',
+  },
+  headerImage: {
+    width: '100%',
+    height: '100%',
+  },
+  headerGradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '50%',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  content: {
+    padding: 20,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 8,
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  location: {
+    color: '#888',
+    fontSize: 14,
+    marginLeft: 4,
+  },
+  detailsGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 24,
+  },
+  detailCard: {
+    flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    marginHorizontal: 4,
+  },
+  detailLabel: {
+    color: '#888',
+    fontSize: 12,
+    marginTop: 8,
+  },
+  detailValue: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 4,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 12,
+  },
+  description: {
+    color: '#ccc',
+    fontSize: 15,
+    lineHeight: 24,
+    marginBottom: 24,
+  },
+  amenitiesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  amenityChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 200, 81, 0.1)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 16,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  amenityText: {
+    color: '#00C851',
+    fontSize: 12,
+    marginLeft: 4,
+  },
+  bottomSpacer: {
+    height: 100,
+  },
+  bottomContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    padding: 20,
+    backgroundColor: 'rgba(0,0,0,0.95)',
+    borderTopWidth: 1,
+    borderTopColor: '#222',
+    alignItems: 'center',
+  },
+  priceContainer: {
+    flex: 1,
+  },
+  priceLabel: {
+    color: '#888',
+    fontSize: 12,
+  },
+  priceValue: {
+    color: '#f5dd4b',
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  bookButton: {
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  bookGradient: {
+    paddingHorizontal: 32,
+    paddingVertical: 16,
+  },
+  bookButtonText: {
+    color: '#111',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+});
+</file>
+
+<file path="src/screens/apartments/ApartmentListScreen.tsx">
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  Dimensions,
+  StatusBar,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import StarlightBackground from '../../components/StarlightBackground';
+
+const { width } = Dimensions.get('window');
+
+interface Apartment {
+  id: string;
+  name: string;
+  location: string;
+  price: number;
+  bedrooms: number;
+  bathrooms: number;
+  image: string;
+  rating: number;
+}
+
+export default function ApartmentListScreen({ navigation }: any) {
+  const [apartments, setApartments] = useState<Apartment[]>([
+    {
+      id: '1',
+      name: 'Luxury Loft Downtown',
+      location: 'Victoria Island, Lagos',
+      price: 150000,
+      bedrooms: 3,
+      bathrooms: 2,
+      image: 'https://via.placeholder.com/400x250',
+      rating: 4.8,
+    },
+    {
+      id: '2',
+      name: 'Modern Studio Apartment',
+      location: 'Ikoyi, Lagos',
+      price: 80000,
+      bedrooms: 1,
+      bathrooms: 1,
+      image: 'https://via.placeholder.com/400x250',
+      rating: 4.5,
+    },
+  ]);
+
+  const renderApartment = (apartment: Apartment) => (
+    <TouchableOpacity
+      key={apartment.id}
+      style={styles.apartmentCard}
+      onPress={() => navigation.navigate('ApartmentDetails', { apartmentId: apartment.id })}
+      activeOpacity={0.8}
+    >
+      <Image source={{ uri: apartment.image }} style={styles.apartmentImage} />
+      <View style={styles.apartmentInfo}>
+        <View style={styles.apartmentHeader}>
+          <Text style={styles.apartmentName} numberOfLines={1}>
+            {apartment.name}
+          </Text>
+          <View style={styles.ratingContainer}>
+            <Ionicons name="star" size={14} color="#f5dd4b" />
+            <Text style={styles.rating}>{apartment.rating}</Text>
+          </View>
+        </View>
+        
+        <View style={styles.locationRow}>
+          <Ionicons name="location-outline" size={14} color="#888" />
+          <Text style={styles.location}>{apartment.location}</Text>
+        </View>
+        
+        <View style={styles.detailsRow}>
+          <View style={styles.detailItem}>
+            <Ionicons name="bed-outline" size={16} color="#f5dd4b" />
+            <Text style={styles.detailText}>{apartment.bedrooms} Beds</Text>
+          </View>
+          <View style={styles.detailItem}>
+            <Ionicons name="water-outline" size={16} color="#f5dd4b" />
+            <Text style={styles.detailText}>{apartment.bathrooms} Baths</Text>
+          </View>
+        </View>
+        
+        <View style={styles.priceRow}>
+          <Text style={styles.priceLabel}>Per Night</Text>
+          <Text style={styles.price}>₦{apartment.price.toLocaleString()}</Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+
+  return (
+    <View style={styles.container}>
+      <StarlightBackground />
+      <StatusBar barStyle="light-content" />
+      
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Apartments</Text>
+        <TouchableOpacity style={styles.filterButton}>
+          <Ionicons name="options-outline" size={24} color="#fff" />
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        <Text style={styles.sectionTitle}>Available Apartments</Text>
+        {apartments.map(renderApartment)}
+        <View style={styles.bottomSpacer} />
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 50,
+    paddingBottom: 20,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  filterButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',
+    paddingHorizontal: 20,
+    marginBottom: 16,
+  },
+  apartmentCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 16,
+    marginHorizontal: 20,
+    marginBottom: 16,
+    overflow: 'hidden',
+  },
+  apartmentImage: {
+    width: '100%',
+    height: 200,
+  },
+  apartmentInfo: {
+    padding: 16,
+  },
+  apartmentHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  apartmentName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',
+    flex: 1,
+  },
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(245, 221, 75, 0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  rating: {
+    color: '#f5dd4b',
+    fontSize: 12,
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  location: {
+    color: '#888',
+    fontSize: 14,
+    marginLeft: 4,
+  },
+  detailsRow: {
+    flexDirection: 'row',
+    marginBottom: 12,
+  },
+  detailItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  detailText: {
+    color: '#fff',
+    fontSize: 14,
+    marginLeft: 4,
+  },
+  priceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  priceLabel: {
+    color: '#888',
+    fontSize: 12,
+  },
+  price: {
+    color: '#f5dd4b',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  bottomSpacer: {
+    height: 40,
+  },
+});
+</file>
+
+<file path="src/screens/auth/LoginScreen.tsx">
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+  Alert,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import StarlightBackground from '../../components/StarlightBackground';
+import { useStore } from '../../store/useStore';
+
+export default function LoginScreen({ navigation }: any) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const login = useStore((state) => state.login);
+
+  const handleLogin = async () => {
+    // Validate inputs
+    if (!email.trim()) {
+      Alert.alert('Error', 'Please enter your email');
+      return;
+    }
+
+    if (!password.trim()) {
+      Alert.alert('Error', 'Please enter your password');
+      return;
+    }
+
+    setLoading(true);
+
+    // MOCK LOGIN - Accept any credentials
+    setTimeout(() => {
+      // Create mock user data
+      const mockUser = {
+        id: '123456',
+        name: email.split('@')[0] || 'Test User', // Use email prefix as name
+        email: email,
+        phone: '+234 123 456 7890',
+        profileImage: 'https://via.placeholder.com/150',
+        address: 'Lagos, Nigeria',
+        createdAt: new Date().toISOString(),
+      };
+
+      const mockToken = 'mock-jwt-token-12345';
+
+      // Log user in with Zustand
+      login(mockUser, mockToken);
+
+      setLoading(false);
+
+      Alert.alert('Success', `Welcome back, ${mockUser.name}!`);
+    }, 1000); // Simulate network delay
+  };
+
+  return (
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <StarlightBackground />
+
+      <View style={styles.content}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.title}>Welcome Back!</Text>
+          <Text style={styles.subtitle}>Sign in to continue</Text>
+        </View>
+
+        {/* Mock Login Notice */}
+        <View style={styles.mockNotice}>
+          <Ionicons name="information-circle" size={20} color="#f5dd4b" />
+          <Text style={styles.mockText}>
+            Mock Login: Enter any email & password
+          </Text>
+        </View>
+
+        {/* Email Input */}
+        <View style={styles.inputContainer}>
+          <Ionicons name="mail-outline" size={20} color="#888" style={styles.inputIcon} />
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            placeholderTextColor="#666"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+        </View>
+
+        {/* Password Input */}
+        <View style={styles.inputContainer}>
+          <Ionicons name="lock-closed-outline" size={20} color="#888" style={styles.inputIcon} />
+          <TextInput
+            style={styles.input}
+            placeholder="Password"
+            placeholderTextColor="#666"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={!showPassword}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+            <Ionicons
+              name={showPassword ? 'eye-outline' : 'eye-off-outline'}
+              size={20}
+              color="#888"
+            />
+          </TouchableOpacity>
+        </View>
+
+        {/* Forgot Password */}
+        <TouchableOpacity style={styles.forgotPassword}>
+          <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+        </TouchableOpacity>
+
+        {/* Login Button */}
+        <TouchableOpacity
+          style={[styles.loginButton, loading && styles.loginButtonDisabled]}
+          onPress={handleLogin}
+          disabled={loading}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.loginButtonText}>
+            {loading ? 'Signing In...' : 'Sign In'}
+          </Text>
+        </TouchableOpacity>
+
+        {/* Sign Up Link */}
+        <View style={styles.signupContainer}>
+          <Text style={styles.signupText}>Don't have an account? </Text>
+          <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
+            <Text style={styles.signupLink}>Sign Up</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Quick Test Buttons */}
+        <View style={styles.quickTestContainer}>
+          <Text style={styles.quickTestTitle}>Quick Test:</Text>
+          <TouchableOpacity
+            style={styles.quickTestButton}
+            onPress={() => {
+              setEmail('test@clubsync.com');
+              setPassword('password123');
+            }}
+          >
+            <Text style={styles.quickTestButtonText}>Fill Test Credentials</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </KeyboardAvoidingView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 30,
+  },
+  header: {
+    marginBottom: 40,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#888',
+  },
+  mockNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(245, 221, 75, 0.1)',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 24,
+  },
+  mockText: {
+    color: '#f5dd4b',
+    fontSize: 12,
+    marginLeft: 8,
+    flex: 1,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  inputIcon: {
+    marginRight: 12,
+  },
+  input: {
+    flex: 1,
+    color: '#fff',
+    fontSize: 16,
+    paddingVertical: 16,
+  },
+  forgotPassword: {
+    alignSelf: 'flex-end',
+    marginBottom: 24,
+  },
+  forgotPasswordText: {
+    color: '#f5dd4b',
+    fontSize: 14,
+  },
+  loginButton: {
+    backgroundColor: '#f5dd4b',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  loginButtonDisabled: {
+    opacity: 0.5,
+  },
+  loginButtonText: {
+    color: '#000',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  signupContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  signupText: {
+    color: '#888',
+    fontSize: 14,
+  },
+  signupLink: {
+    color: '#f5dd4b',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  quickTestContainer: {
+    marginTop: 40,
+    alignItems: 'center',
+  },
+  quickTestTitle: {
+    color: '#666',
+    fontSize: 12,
+    marginBottom: 8,
+  },
+  quickTestButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  quickTestButtonText: {
+    color: '#888',
+    fontSize: 12,
+  },
+});
+</file>
+
+<file path="src/screens/auth/OnboardingScreen.tsx">
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import StarlightBackground from '../../components/StarlightBackground';
+
+export default function OnboardingScreen({ navigation }: any) {
+  return (
+    <View style={styles.container}>
+      <StarlightBackground />
+
+      <View style={styles.content}>
+        <Ionicons name="sparkles" size={64} color="#f5dd4b" />
+        <Text style={styles.title}>Welcome to ClubSync</Text>
+        <Text style={styles.subtitle}>Your Nightlife Companion</Text>
+        <Text style={styles.description}>
+          Discover events, book tables, and enjoy VIP experiences
+        </Text>
+        
+        <TouchableOpacity 
+          style={styles.button}
+          onPress={() => navigation.navigate('Login')}
+        >
+          <Text style={styles.buttonText}>Get Started</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  title: {
+    color: '#fff',
+    fontSize: 32,
+    fontWeight: 'bold',
+    marginTop: 20,
+    marginBottom: 8,
+  },
+  subtitle: {
+    color: '#f5dd4b',
+    fontSize: 18,
+    marginBottom: 16,
+  },
+  description: {
+    color: '#888',
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 40,
+  },
+  button: {
+    backgroundColor: '#f5dd4b',
+    paddingHorizontal: 48,
+    paddingVertical: 16,
+    borderRadius: 12,
+  },
+  buttonText: {
+    color: '#000',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+});
+</file>
+
+<file path="src/screens/auth/SignUpScreen.tsx">
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  StatusBar,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import StarlightBackground from '../../components/StarlightBackground';
+import { useStore } from '../../store/useStore';
+import { authAPI } from '../../services/api';
+
+export default function SignUpScreen({ navigation }: any) {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const login = useStore((state) => state.login);
+
+  const handleSignUp = async () => {
+    // Validation
+    if (!name.trim() || !email.trim() || !password.trim() || !confirmPassword.trim()) {
+      Alert.alert('Error', 'Please fill in all required fields');
+      return;
+    }
+
+    if (!email.includes('@')) {
+      Alert.alert('Error', 'Please enter a valid email');
+      return;
+    }
+
+    if (password.length < 6) {
+      Alert.alert('Error', 'Password must be at least 6 characters');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await authAPI.signup({
+        name: name.trim(),
+        email: email.trim(),
+        password,
+        phone: phone.trim() || undefined,
+      });
+
+      // Automatically log in the user after signup
+      login(response.user, response.token);
+
+      Alert.alert('Success', 'Account created successfully!');
+    } catch (error: any) {
+      console.error('Signup error:', error);
+      Alert.alert(
+        'Signup Failed',
+        error.response?.data?.message || 'Unable to create account. Please try again.'
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <StarlightBackground />
+      <StatusBar barStyle="light-content" />
+
+      <ScrollView 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* Back Button */}
+        <TouchableOpacity 
+          style={styles.backButton} 
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
+
+        {/* Header */}
+        <View style={styles.header}>
+          <Ionicons name="person-add" size={64} color="#f5dd4b" />
+          <Text style={styles.title}>Create Account</Text>
+          <Text style={styles.subtitle}>Join ClubSync today</Text>
+        </View>
+
+        {/* Form */}
+        <View style={styles.form}>
+          {/* Name Input */}
+          <View style={styles.inputContainer}>
+            <Ionicons name="person-outline" size={20} color="#888" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Full Name *"
+              placeholderTextColor="#888"
+              value={name}
+              onChangeText={setName}
+              autoCapitalize="words"
+            />
+          </View>
+
+          {/* Email Input */}
+          <View style={styles.inputContainer}>
+            <Ionicons name="mail-outline" size={20} color="#888" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Email *"
+              placeholderTextColor="#888"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+          </View>
+
+          {/* Phone Input */}
+          <View style={styles.inputContainer}>
+            <Ionicons name="call-outline" size={20} color="#888" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Phone Number (Optional)"
+              placeholderTextColor="#888"
+              value={phone}
+              onChangeText={setPhone}
+              keyboardType="phone-pad"
+            />
+          </View>
+
+          {/* Password Input */}
+          <View style={styles.inputContainer}>
+            <Ionicons name="lock-closed-outline" size={20} color="#888" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Password *"
+              placeholderTextColor="#888"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              autoCapitalize="none"
+            />
+            <TouchableOpacity
+              onPress={() => setShowPassword(!showPassword)}
+              style={styles.eyeIcon}
+            >
+              <Ionicons
+                name={showPassword ? 'eye-outline' : 'eye-off-outline'}
+                size={20}
+                color="#888"
+              />
+            </TouchableOpacity>
+          </View>
+
+          {/* Confirm Password Input */}
+          <View style={styles.inputContainer}>
+            <Ionicons name="lock-closed-outline" size={20} color="#888" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Confirm Password *"
+              placeholderTextColor="#888"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry={!showConfirmPassword}
+              autoCapitalize="none"
+            />
+            <TouchableOpacity
+              onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+              style={styles.eyeIcon}
+            >
+              <Ionicons
+                name={showConfirmPassword ? 'eye-outline' : 'eye-off-outline'}
+                size={20}
+                color="#888"
+              />
+            </TouchableOpacity>
+          </View>
+
+          {/* Terms & Conditions */}
+          <Text style={styles.termsText}>
+            By signing up, you agree to our{' '}
+            <Text style={styles.termsLink}>Terms of Service</Text> and{' '}
+            <Text style={styles.termsLink}>Privacy Policy</Text>
+          </Text>
+
+          {/* Sign Up Button */}
+          <TouchableOpacity
+            style={[styles.signupButton, loading && styles.signupButtonDisabled]}
+            onPress={handleSignUp}
+            disabled={loading}
+            activeOpacity={0.8}
+          >
+            {loading ? (
+              <ActivityIndicator color="#000" />
+            ) : (
+              <Text style={styles.signupButtonText}>Create Account</Text>
+            )}
+          </TouchableOpacity>
+
+          {/* Divider */}
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>OR</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          {/* Social Sign Up Buttons */}
+          <TouchableOpacity style={styles.socialButton}>
+            <Ionicons name="logo-google" size={20} color="#fff" />
+            <Text style={styles.socialButtonText}>Sign up with Google</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.socialButton}>
+            <Ionicons name="logo-apple" size={20} color="#fff" />
+            <Text style={styles.socialButtonText}>Sign up with Apple</Text>
+          </TouchableOpacity>
+
+          {/* Login Link */}
+          <View style={styles.loginContainer}>
+            <Text style={styles.loginText}>Already have an account? </Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+              <Text style={styles.loginLink}>Login</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={styles.bottomSpacer} />
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  scrollContent: {
+    padding: 20,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginTop: 16,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#888',
+    marginTop: 4,
+  },
+  form: {
+    width: '100%',
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 12,
+    marginBottom: 16,
+    paddingHorizontal: 16,
+  },
+  inputIcon: {
+    marginRight: 12,
+  },
+  input: {
+    flex: 1,
+    color: '#fff',
+    fontSize: 16,
+    paddingVertical: 16,
+  },
+  eyeIcon: {
+    padding: 8,
+  },
+  termsText: {
+    color: '#888',
+    fontSize: 12,
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 18,
+  },
+  termsLink: {
+    color: '#f5dd4b',
+  },
+  signupButton: {
+    backgroundColor: '#f5dd4b',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  signupButtonDisabled: {
+    opacity: 0.6,
+  },
+  signupButtonText: {
+    color: '#000',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  dividerText: {
+    color: '#888',
+    paddingHorizontal: 16,
+    fontSize: 14,
+  },
+  socialButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 12,
+    paddingVertical: 14,
+    marginBottom: 12,
+  },
+  socialButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    marginLeft: 12,
+  },
+  loginContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 24,
+  },
+  loginText: {
+    color: '#888',
+    fontSize: 14,
+  },
+  loginLink: {
+    color: '#f5dd4b',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  bottomSpacer: {
+    height: 40,
+  },
+});
+</file>
+
+<file path="src/screens/bookings/BookingFlowScreen.tsx">
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  TextInput,
+  StatusBar,
+  Alert,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import StarlightBackground from '../../components/StarlightBackground';
+import { useStore } from '../../store/useStore';
+import { eventsAPI, bookingsAPI } from '../../services/api';
+
+interface TableOption {
+  id: string;
+  name: string;
+  capacity: number;
+  price: number;
+  available: boolean;
+}
+
+interface TicketType {
+  id: string;
+  name: string;
+  price: number;
+  available: number;
+  description: string;
+}
+
+export default function BookingFlowScreen({ route, navigation }: any) {
+  const { eventId } = route.params;
+  const user = useStore((state) => state.user);
+
+  const [bookingType, setBookingType] = useState<'ticket' | 'table'>('ticket');
+  const [selectedTable, setSelectedTable] = useState<TableOption | null>(null);
+  const [selectedTicket, setSelectedTicket] = useState<TicketType | null>(null);
+  const [ticketQuantity, setTicketQuantity] = useState(1);
+  const [isGroupBooking, setIsGroupBooking] = useState(false);
+  const [eventDetails, setEventDetails] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+
+  // Mock data (replace with actual API calls)
+  const tableOptions: TableOption[] = [
+    { id: '1', name: 'VIP Table (Front)', capacity: 6, price: 150000, available: true },
+    { id: '2', name: 'Premium Table', capacity: 8, price: 200000, available: true },
+    { id: '3', name: 'Standard Table', capacity: 4, price: 80000, available: false },
+    { id: '4', name: 'Booth', capacity: 10, price: 250000, available: true },
+  ];
+
+  const ticketTypes: TicketType[] = [
+    {
+      id: '1',
+      name: 'Regular Entry',
+      price: 5000,
+      available: 100,
+      description: 'General admission',
+    },
+    {
+      id: '2',
+      name: 'VIP Entry',
+      price: 15000,
+      available: 50,
+      description: 'VIP section access',
+    },
+    {
+      id: '3',
+      name: 'VVIP Entry',
+      price: 25000,
+      available: 20,
+      description: 'Premium VIP access + perks',
+    },
+  ];
+
+  useEffect(() => {
+    fetchEventDetails();
+  }, []);
+
+  const fetchEventDetails = async () => {
+    try {
+      const response = await eventsAPI.getEventById(eventId);
+      setEventDetails(response);
+    } catch (error) {
+      console.error('Error fetching event details:', error);
+    }
+  };
+
+  const calculateTotal = () => {
+    const platformFee = 0.03; // 3% platform fee
+
+    if (bookingType === 'table' && selectedTable) {
+      const subtotal = selectedTable.price;
+      const fee = subtotal * platformFee;
+      return { subtotal, fee, total: subtotal + fee };
+    }
+
+    if (bookingType === 'ticket' && selectedTicket) {
+      const subtotal = selectedTicket.price * ticketQuantity;
+      const fee = subtotal * platformFee;
+      return { subtotal, fee, total: subtotal + fee };
+    }
+
+    return { subtotal: 0, fee: 0, total: 0 };
+  };
+
+  const handleProceedToPayment = () => {
+    if (bookingType === 'table' && !selectedTable) {
+      Alert.alert('Error', 'Please select a table');
+      return;
+    }
+
+    if (bookingType === 'ticket' && !selectedTicket) {
+      Alert.alert('Error', 'Please select a ticket type');
+      return;
+    }
+
+    const { total } = calculateTotal();
+
+    if (isGroupBooking) {
+      navigation.navigate('GroupBooking', {
+        eventId,
+        bookingType,
+        selectedItem: bookingType === 'table' ? selectedTable : selectedTicket,
+        quantity: bookingType === 'ticket' ? ticketQuantity : 1,
+        totalAmount: total,
+      });
+    } else {
+      navigation.navigate('Payment', {
+        eventId,
+        bookingType,
+        selectedItem: bookingType === 'table' ? selectedTable : selectedTicket,
+        quantity: bookingType === 'ticket' ? ticketQuantity : 1,
+        totalAmount: total,
+      });
+    }
+  };
+
+  const renderTableOption = (table: TableOption) => (
+    <TouchableOpacity
+      key={table.id}
+      style={[
+        styles.optionCard,
+        selectedTable?.id === table.id && styles.optionCardSelected,
+        !table.available && styles.optionCardDisabled,
+      ]}
+      onPress={() => table.available && setSelectedTable(table)}
+      disabled={!table.available}
+      activeOpacity={0.7}
+    >
+      <View style={styles.optionHeader}>
+        <View>
+          <Text style={styles.optionName}>{table.name}</Text>
+          <View style={styles.capacityContainer}>
+            <Ionicons name="people" size={14} color="#888" />
+            <Text style={styles.capacityText}>Capacity: {table.capacity}</Text>
+          </View>
+        </View>
+        <View style={styles.optionRight}>
+          <Text style={styles.optionPrice}>₦{table.price.toLocaleString()}</Text>
+          {!table.available && <Text style={styles.unavailableText}>Unavailable</Text>}
+        </View>
+      </View>
+      {selectedTable?.id === table.id && (
+        <View style={styles.selectedIndicator}>
+          <Ionicons name="checkmark-circle" size={20} color="#f5dd4b" />
+        </View>
+      )}
+    </TouchableOpacity>
+  );
+
+  const renderTicketType = (ticket: TicketType) => (
+    <TouchableOpacity
+      key={ticket.id}
+      style={[
+        styles.optionCard,
+        selectedTicket?.id === ticket.id && styles.optionCardSelected,
+      ]}
+      onPress={() => setSelectedTicket(ticket)}
+      activeOpacity={0.7}
+    >
+      <View style={styles.optionHeader}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.optionName}>{ticket.name}</Text>
+          <Text style={styles.ticketDescription}>{ticket.description}</Text>
+          <Text style={styles.availableText}>{ticket.available} available</Text>
+        </View>
+        <Text style={styles.optionPrice}>₦{ticket.price.toLocaleString()}</Text>
+      </View>
+      {selectedTicket?.id === ticket.id && (
+        <View style={styles.selectedIndicator}>
+          <Ionicons name="checkmark-circle" size={20} color="#f5dd4b" />
+        </View>
+      )}
+    </TouchableOpacity>
+  );
+
+  const { subtotal, fee, total } = calculateTotal();
+
+  return (
+    <View style={styles.container}>
+      <StarlightBackground />
+      <StatusBar barStyle="light-content" />
+
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Book Now</Text>
+        <View style={{ width: 40 }} />
+      </View>
+
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {/* Booking Type Toggle */}
+        <View style={styles.toggleContainer}>
+          <TouchableOpacity
+            style={[styles.toggleButton, bookingType === 'ticket' && styles.toggleButtonActive]}
+            onPress={() => setBookingType('ticket')}
+          >
+            <Ionicons
+              name="ticket"
+              size={20}
+              color={bookingType === 'ticket' ? '#000' : '#888'}
+            />
+            <Text
+              style={[
+                styles.toggleText,
+                bookingType === 'ticket' && styles.toggleTextActive,
+              ]}
+            >
+              Tickets
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.toggleButton, bookingType === 'table' && styles.toggleButtonActive]}
+            onPress={() => setBookingType('table')}
+          >
+            <Ionicons
+              name="restaurant"
+              size={20}
+              color={bookingType === 'table' ? '#000' : '#888'}
+            />
+            <Text
+              style={[styles.toggleText, bookingType === 'table' && styles.toggleTextActive]}
+            >
+              Tables
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Options List */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>
+            {bookingType === 'ticket' ? 'Select Ticket Type' : 'Select Table'}
+          </Text>
+
+          {bookingType === 'table'
+            ? tableOptions.map(renderTableOption)
+            : ticketTypes.map(renderTicketType)}
+        </View>
+
+        {/* Quantity Selector (for tickets only) */}
+        {bookingType === 'ticket' && selectedTicket && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Quantity</Text>
+            <View style={styles.quantityContainer}>
+              <TouchableOpacity
+                style={styles.quantityButton}
+                onPress={() => setTicketQuantity(Math.max(1, ticketQuantity - 1))}
+              >
+                <Ionicons name="remove" size={24} color="#fff" />
+              </TouchableOpacity>
+
+              <View style={styles.quantityDisplay}>
+                <Text style={styles.quantityText}>{ticketQuantity}</Text>
+              </View>
+
+              <TouchableOpacity
+                style={styles.quantityButton}
+                onPress={() =>
+                  setTicketQuantity(Math.min(selectedTicket.available, ticketQuantity + 1))
+                }
+              >
+                <Ionicons name="add" size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {/* Group Booking Toggle */}
+        <View style={styles.section}>
+          <TouchableOpacity
+            style={styles.groupBookingToggle}
+            onPress={() => setIsGroupBooking(!isGroupBooking)}
+            activeOpacity={0.7}
+          >
+            <View style={styles.groupBookingLeft}>
+              <Ionicons name="people" size={24} color="#f5dd4b" />
+              <View style={styles.groupBookingText}>
+                <Text style={styles.groupBookingTitle}>Group Booking</Text>
+                <Text style={styles.groupBookingSubtitle}>
+                  Split payment with friends
+                </Text>
+              </View>
+            </View>
+            <View
+              style={[styles.toggle, isGroupBooking && styles.toggleActive]}
+            >
+              <View style={[styles.toggleCircle, isGroupBooking && styles.toggleCircleActive]} />
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* Price Breakdown */}
+        {(selectedTable || selectedTicket) && (
+          <View style={styles.priceBreakdown}>
+            <Text style={styles.sectionTitle}>Price Breakdown</Text>
+
+            <View style={styles.priceRow}>
+              <Text style={styles.priceLabel}>
+                Subtotal {bookingType === 'ticket' && `(${ticketQuantity}x)`}
+              </Text>
+              <Text style={styles.priceValue}>₦{subtotal.toLocaleString()}</Text>
+            </View>
+
+            <View style={styles.priceRow}>
+              <Text style={styles.priceLabel}>Platform Fee (3%)</Text>
+              <Text style={styles.priceValue}>₦{fee.toLocaleString()}</Text>
+            </View>
+
+            <View style={styles.priceDivider} />
+
+            <View style={styles.priceRow}>
+              <Text style={styles.totalLabel}>Total</Text>
+              <Text style={styles.totalValue}>₦{total.toLocaleString()}</Text>
+            </View>
+          </View>
+        )}
+
+        <View style={styles.bottomSpacer} />
+      </ScrollView>
+
+      {/* Bottom CTA */}
+      {(selectedTable || selectedTicket) && (
+        <View style={styles.bottomContainer}>
+          <View style={styles.bottomLeft}>
+            <Text style={styles.bottomLabel}>Total Amount</Text>
+            <Text style={styles.bottomValue}>₦{total.toLocaleString()}</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.proceedButton}
+            onPress={handleProceedToPayment}
+            activeOpacity={0.8}
+          >
+            <LinearGradient
+              colors={['#f5dd4b', '#d4a017']}
+              style={styles.proceedGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+            >
+              <Text style={styles.proceedButtonText}>
+                {isGroupBooking ? 'Continue to Group' : 'Proceed to Payment'}
+              </Text>
+              <Ionicons name="arrow-forward" size={20} color="#111" />
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 50,
+    paddingBottom: 20,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  toggleContainer: {
+    flexDirection: 'row',
+    marginHorizontal: 20,
+    marginBottom: 24,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    padding: 4,
+  },
+  toggleButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  toggleButtonActive: {
+    backgroundColor: '#f5dd4b',
+  },
+  toggleText: {
+    color: '#888',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  toggleTextActive: {
+    color: '#000',
+  },
+  section: {
+    marginBottom: 24,
+    paddingHorizontal: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 16,
+  },
+  optionCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    position: 'relative',
+  },
+  optionCardSelected: {
+    borderColor: '#f5dd4b',
+    backgroundColor: 'rgba(245, 221, 75, 0.1)',
+  },
+  optionCardDisabled: {
+    opacity: 0.5,
+  },
+  optionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  optionName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 6,
+  },
+  capacityContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  capacityText: {
+    color: '#888',
+    fontSize: 12,
+    marginLeft: 4,
+  },
+  ticketDescription: {
+    color: '#888',
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  availableText: {
+    color: '#00C851',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  optionRight: {
+    alignItems: 'flex-end',
+  },
+  optionPrice: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#f5dd4b',
+  },
+  unavailableText: {
+    color: '#ff4444',
+    fontSize: 11,
+    marginTop: 4,
+  },
+  selectedIndicator: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+  },
+  quantityContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quantityButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'rgba(245, 221, 75, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  quantityDisplay: {
+    width: 80,
+    height: 50,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginHorizontal: 16,
+  },
+  quantityText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  groupBookingToggle: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    padding: 16,
+  },
+  groupBookingLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  groupBookingText: {
+    marginLeft: 12,
+  },
+  groupBookingTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 2,
+  },
+  groupBookingSubtitle: {
+    fontSize: 12,
+    color: '#888',
+  },
+  toggle: {
+    width: 50,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    padding: 2,
+    justifyContent: 'center',
+  },
+  toggleActive: {
+    backgroundColor: '#f5dd4b',
+  },
+  toggleCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#fff',
+  },
+  toggleCircleActive: {
+    alignSelf: 'flex-end',
+  },
+  priceBreakdown: {
+    marginHorizontal: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 24,
+  },
+  priceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  priceLabel: {
+    color: '#888',
+    fontSize: 14,
+  },
+  priceValue: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  priceDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    marginVertical: 8,
+  },
+  totalLabel: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  totalValue: {
+    color: '#f5dd4b',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  bottomSpacer: {
+    height: 120,
+  },
+  bottomContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    padding: 20,
+    backgroundColor: 'rgba(0,0,0,0.95)',
+    borderTopWidth: 1,
+    borderTopColor: '#222',
+    alignItems: 'center',
+  },
+  bottomLeft: {
+    flex: 1,
+  },
+  bottomLabel: {
+    color: '#888',
+    fontSize: 12,
+  },
+  bottomValue: {
+    color: '#f5dd4b',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  proceedButton: {
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  proceedGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+  },
+  proceedButtonText: {
+    color: '#111',
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginRight: 8,
+  },
+});
+</file>
+
+<file path="src/screens/bookings/GroupBookingScreen.tsx">
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import StarlightBackground from '../../components/StarlightBackground';
+
+export default function GroupBookingScreen({ navigation }: any) {
+  return (
+    <View style={styles.container}>
+      <StarlightBackground />
+      
+      <TouchableOpacity 
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
+        <Ionicons name="arrow-back" size={24} color="#fff" />
+      </TouchableOpacity>
+
+      <View style={styles.content}>
+        <Ionicons name="people-outline" size={64} color="#f5dd4b" />
+        <Text style={styles.title}>Group Booking</Text>
+        <Text style={styles.subtitle}>Coming Soon...</Text>
+        <Text style={styles.description}>
+          Invite friends and split payments
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  title: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginTop: 20,
+    marginBottom: 8,
+  },
+  subtitle: {
+    color: '#f5dd4b',
+    fontSize: 18,
+    marginBottom: 8,
+  },
+  description: {
+    color: '#888',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+});
+</file>
+
+<file path="src/screens/cars/CarBookingScreen.tsx">
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import StarlightBackground from '../../components/StarlightBackground';
+
+export default function CarBookingScreen({ navigation }: any) {
+  return (
+    <View style={styles.container}>
+      <StarlightBackground />
+      
+      <TouchableOpacity 
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
+        <Ionicons name="arrow-back" size={24} color="#fff" />
+      </TouchableOpacity>
+
+      <View style={styles.content}>
+        <Ionicons name="calendar-outline" size={64} color="#f5dd4b" />
+        <Text style={styles.title}>Car Booking</Text>
+        <Text style={styles.subtitle}>Coming Soon...</Text>
+        <Text style={styles.description}>
+          Select pickup/return dates and complete your rental
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  title: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginTop: 20,
+    marginBottom: 8,
+  },
+  subtitle: {
+    color: '#f5dd4b',
+    fontSize: 18,
+    marginBottom: 8,
+  },
+  description: {
+    color: '#888',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+});
+</file>
+
+<file path="src/screens/cars/CarDetailsScreen.tsx">
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import StarlightBackground from '../../components/StarlightBackground';
+
+export default function CarDetailsScreen({ navigation }: any) {
+  return (
+    <View style={styles.container}>
+      <StarlightBackground />
+      
+      <TouchableOpacity 
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
+        <Ionicons name="arrow-back" size={24} color="#fff" />
+      </TouchableOpacity>
+
+      <View style={styles.content}>
+        <Ionicons name="information-circle-outline" size={64} color="#f5dd4b" />
+        <Text style={styles.title}>Car Details</Text>
+        <Text style={styles.subtitle}>Coming Soon...</Text>
+        <Text style={styles.description}>
+          View car specifications, features, and pricing
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  title: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginTop: 20,
+    marginBottom: 8,
+  },
+  subtitle: {
+    color: '#f5dd4b',
+    fontSize: 18,
+    marginBottom: 8,
+  },
+  description: {
+    color: '#888',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+});
+</file>
+
+<file path="src/screens/cars/CarListScreen.tsx">
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import StarlightBackground from '../../components/StarlightBackground';
+
+export default function CarListScreen({ navigation }: any) {
+  return (
+    <View style={styles.container}>
+      <StarlightBackground />
+      
+      <TouchableOpacity 
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
+        <Ionicons name="arrow-back" size={24} color="#fff" />
+      </TouchableOpacity>
+
+      <View style={styles.content}>
+        <Ionicons name="car-sport-outline" size={64} color="#f5dd4b" />
+        <Text style={styles.title}>Car Rentals</Text>
+        <Text style={styles.subtitle}>Coming Soon...</Text>
+        <Text style={styles.description}>
+          Browse available cars and book your ride
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  title: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginTop: 20,
+    marginBottom: 8,
+  },
+  subtitle: {
+    color: '#f5dd4b',
+    fontSize: 18,
+    marginBottom: 8,
+  },
+  description: {
+    color: '#888',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+});
+</file>
+
+<file path="src/screens/events/EventDetailsScreen.tsx">
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Image,
+  TouchableOpacity,
+  Dimensions,
+  StatusBar,
+  Share,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import StarlightBackground from '../../components/StarlightBackground';
+import { useStore } from '../../store/useStore';
+import { eventsAPI } from '../../services/api';
+
+const { width, height } = Dimensions.get('window');
+
+interface EventDetails {
+  id: string;
+  name: string;
+  date: string;
+  location: string;
+  category: string;
+  description: string;
+  coverImage: string;
+  price: number;
+  capacity: number;
+  currentAttendees: number;
+  status: string;
+  dressCode?: string;
+  ageRestriction?: string;
+  amenities?: string[];
+}
+
+interface MenuItem {
+  id: string;
+  name: string;
+  price: number;
+  category: string;
+  image?: string;
+}
+
+interface AmbienceMedia {
+  id: string;
+  type: 'image' | 'video';
+  url: string;
+}
+
+export default function EventDetailsScreen({ route, navigation }: any) {
+  const { eventId } = route.params;
+  const favoriteEvents = useStore((state) => state.favoriteEvents);
+  const addFavoriteEvent = useStore((state) => state.addFavoriteEvent);
+  const removeFavoriteEvent = useStore((state) => state.removeFavoriteEvent);
+
+  const [event, setEvent] = useState<EventDetails | null>(null);
+  const [menu, setMenu] = useState<MenuItem[]>([]);
+  const [ambience, setAmbience] = useState<AmbienceMedia[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'about' | 'menu' | 'ambience'>('about');
+
+  const isFavorite = favoriteEvents.includes(eventId);
+
+  useEffect(() => {
+    fetchEventDetails();
+  }, [eventId]);
+
+  const fetchEventDetails = async () => {
+    try {
+      setLoading(true);
+      const [eventData, menuData, ambienceData] = await Promise.all([
+        eventsAPI.getEventById(eventId),
+        eventsAPI.getEventMenu(eventId),
+        eventsAPI.getEventAmbience(eventId),
+      ]);
+
+      setEvent(eventData);
+      setMenu(menuData.items || []);
+      setAmbience(ambienceData.media || []);
+    } catch (error) {
+      console.error('Error fetching event details:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleFavorite = () => {
+    if (isFavorite) {
+      removeFavoriteEvent(eventId);
+    } else {
+      addFavoriteEvent(eventId);
+    }
+  };
+
+  const shareEvent = async () => {
+    try {
+      await Share.share({
+        message: `Check out ${event?.name} on ClubSync! 🎉`,
+        url: `https://clubsync.app/events/${eventId}`,
+      });
+    } catch (error) {
+      console.error('Error sharing:', error);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  };
+
+  const getCapacityPercentage = () => {
+    if (!event) return 0;
+    return (event.currentAttendees / event.capacity) * 100;
+  };
+
+  const getCapacityColor = () => {
+    const percentage = getCapacityPercentage();
+    if (percentage >= 80) return '#ff4444';
+    if (percentage >= 50) return '#f5dd4b';
+    return '#00C851';
+  };
+
+  const renderAboutTab = () => (
+    <View style={styles.tabContent}>
+      <Text style={styles.description}>{event?.description}</Text>
+
+      {/* Info Cards */}
+      <View style={styles.infoGrid}>
+        <View style={styles.infoCard}>
+          <Ionicons name="calendar" size={24} color="#f5dd4b" />
+          <Text style={styles.infoLabel}>Date</Text>
+          <Text style={styles.infoValue}>{formatDate(event?.date || '')}</Text>
+        </View>
+
+        <View style={styles.infoCard}>
+          <Ionicons name="location" size={24} color="#f5dd4b" />
+          <Text style={styles.infoLabel}>Location</Text>
+          <Text style={styles.infoValue}>{event?.location}</Text>
+        </View>
+      </View>
+
+      <View style={styles.infoGrid}>
+        <View style={styles.infoCard}>
+          <Ionicons name="shirt" size={24} color="#f5dd4b" />
+          <Text style={styles.infoLabel}>Dress Code</Text>
+          <Text style={styles.infoValue}>{event?.dressCode || 'Smart Casual'}</Text>
+        </View>
+
+        <View style={styles.infoCard}>
+          <Ionicons name="people" size={24} color="#f5dd4b" />
+          <Text style={styles.infoLabel}>Age</Text>
+          <Text style={styles.infoValue}>{event?.ageRestriction || '18+'}</Text>
+        </View>
+      </View>
+
+      {/* Capacity Bar */}
+      <View style={styles.capacityContainer}>
+        <View style={styles.capacityHeader}>
+          <Text style={styles.capacityTitle}>Venue Capacity</Text>
+          <Text style={styles.capacityValue}>
+            {event?.currentAttendees || 0} / {event?.capacity || 0}
+          </Text>
+        </View>
+        <View style={styles.capacityBar}>
+          <View
+            style={[
+              styles.capacityFill,
+              {
+                width: `${getCapacityPercentage()}%`,
+                backgroundColor: getCapacityColor(),
+              },
+            ]}
+          />
+        </View>
+      </View>
+
+      {/* Amenities */}
+      {event?.amenities && event.amenities.length > 0 && (
+        <View style={styles.amenitiesContainer}>
+          <Text style={styles.amenitiesTitle}>Amenities</Text>
+          <View style={styles.amenitiesGrid}>
+            {event.amenities.map((amenity, index) => (
+              <View key={index} style={styles.amenityChip}>
+                <Ionicons name="checkmark-circle" size={16} color="#00C851" />
+                <Text style={styles.amenityText}>{amenity}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
+    </View>
+  );
+
+  const renderMenuTab = () => (
+    <View style={styles.tabContent}>
+      {menu.length > 0 ? (
+        menu.map((item) => (
+          <View key={item.id} style={styles.menuItem}>
+            {item.image && (
+              <Image source={{ uri: item.image }} style={styles.menuImage} />
+            )}
+            <View style={styles.menuInfo}>
+              <Text style={styles.menuCategory}>{item.category}</Text>
+              <Text style={styles.menuName}>{item.name}</Text>
+              <Text style={styles.menuPrice}>₦{item.price.toLocaleString()}</Text>
+            </View>
+          </View>
+        ))
+      ) : (
+        <Text style={styles.emptyText}>Menu not available for this event</Text>
+      )}
+    </View>
+  );
+
+  const renderAmbienceTab = () => (
+    <View style={styles.tabContent}>
+      {ambience.length > 0 ? (
+        <View style={styles.ambienceGrid}>
+          {ambience.map((media) => (
+            <TouchableOpacity key={media.id} style={styles.ambienceItem} activeOpacity={0.8}>
+              <Image source={{ uri: media.url }} style={styles.ambienceImage} />
+              {media.type === 'video' && (
+                <View style={styles.playButton}>
+                  <Ionicons name="play" size={24} color="#fff" />
+                </View>
+              )}
+            </TouchableOpacity>
+          ))}
+        </View>
+      ) : (
+        <Text style={styles.emptyText}>No photos or videos available</Text>
+      )}
+    </View>
+  );
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <StarlightBackground />
+        <Text style={styles.loadingText}>Loading event details...</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <StarlightBackground />
+      <StatusBar barStyle="light-content" />
+
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {/* Header Image */}
+        <View style={styles.headerContainer}>
+          <Image
+            source={{ uri: event?.coverImage || 'https://via.placeholder.com/400x300' }}
+            style={styles.headerImage}
+          />
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.8)']}
+            style={styles.headerGradient}
+          />
+
+          {/* Back Button */}
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+
+          {/* Action Buttons */}
+          <View style={styles.actionButtons}>
+            <TouchableOpacity style={styles.actionButton} onPress={shareEvent}>
+              <Ionicons name="share-outline" size={24} color="#fff" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.actionButton} onPress={toggleFavorite}>
+              <Ionicons
+                name={isFavorite ? 'heart' : 'heart-outline'}
+                size={24}
+                color={isFavorite ? '#ff4444' : '#fff'}
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Event Title */}
+        <View style={styles.titleContainer}>
+          <View style={styles.categoryBadge}>
+            <Text style={styles.categoryText}>{event?.category.toUpperCase()}</Text>
+          </View>
+          <Text style={styles.eventTitle}>{event?.name}</Text>
+          <View style={styles.priceRow}>
+            <Text style={styles.priceLabel}>Starting from</Text>
+            <Text style={styles.priceValue}>₦{event?.price.toLocaleString()}</Text>
+          </View>
+        </View>
+
+        {/* Tabs */}
+        <View style={styles.tabs}>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'about' && styles.activeTab]}
+            onPress={() => setActiveTab('about')}
+          >
+            <Text style={[styles.tabText, activeTab === 'about' && styles.activeTabText]}>
+              About
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'menu' && styles.activeTab]}
+            onPress={() => setActiveTab('menu')}
+          >
+            <Text style={[styles.tabText, activeTab === 'menu' && styles.activeTabText]}>
+              Menu
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'ambience' && styles.activeTab]}
+            onPress={() => setActiveTab('ambience')}
+          >
+            <Text style={[styles.tabText, activeTab === 'ambience' && styles.activeTabText]}>
+              Gallery
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Tab Content */}
+        {activeTab === 'about' && renderAboutTab()}
+        {activeTab === 'menu' && renderMenuTab()}
+        {activeTab === 'ambience' && renderAmbienceTab()}
+
+        <View style={styles.bottomSpacer} />
+      </ScrollView>
+
+      {/* Bottom CTA */}
+      <View style={styles.bottomContainer}>
+        <TouchableOpacity
+          style={styles.bookButton}
+          onPress={() => navigation.navigate('BookingFlow', { eventId })}
+          activeOpacity={0.8}
+        >
+          <LinearGradient
+            colors={['#f5dd4b', '#d4a017']}
+            style={styles.bookGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+          >
+            <Text style={styles.bookButtonText}>Book Now</Text>
+            <Ionicons name="arrow-forward" size={20} color="#111" />
+          </LinearGradient>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: '#000',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: '#fff',
+    fontSize: 16,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  headerContainer: {
+    width: width,
+    height: height * 0.4,
+    position: 'relative',
+  },
+  headerImage: {
+    width: '100%',
+    height: '100%',
+  },
+  headerGradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '50%',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  actionButtons: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    flexDirection: 'row',
+  },
+  actionButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 12,
+  },
+  titleContainer: {
+    padding: 20,
+  },
+  categoryBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(245, 221, 75, 0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  categoryText: {
+    color: '#f5dd4b',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  eventTitle: {
+    color: '#fff',
+    fontSize: 28,
+    fontWeight: 'bold',
+    marginBottom: 16,
+  },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+  },
+  priceLabel: {
+    color: '#888',
+    fontSize: 14,
+    marginRight: 8,
+  },
+  priceValue: {
+    color: '#f5dd4b',
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  tabs: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#222',
+    paddingHorizontal: 20,
+  },
+  tab: {
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    marginRight: 8,
+  },
+  activeTab: {
+    borderBottomWidth: 2,
+    borderBottomColor: '#f5dd4b',
+  },
+  tabText: {
+    color: '#888',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  activeTabText: {
+    color: '#f5dd4b',
+  },
+  tabContent: {
+    padding: 20,
+  },
+  description: {
+    color: '#ccc',
+    fontSize: 15,
+    lineHeight: 24,
+    marginBottom: 24,
+  },
+  infoGrid: {
+    flexDirection: 'row',
+    marginBottom: 16,
+  },
+  infoCard: {
+    flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    padding: 16,
+    marginRight: 8,
+    alignItems: 'center',
+  },
+  infoLabel: {
+    color: '#888',
+    fontSize: 12,
+    marginTop: 8,
+  },
+  infoValue: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  capacityContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 8,
+  },
+  capacityHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  capacityTitle: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  capacityValue: {
+    color: '#888',
+    fontSize: 14,
+  },
+  capacityBar: {
+    height: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  capacityFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  amenitiesContainer: {
+    marginTop: 24,
+  },
+  amenitiesTitle: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  amenitiesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  amenityChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 200, 81, 0.1)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 16,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  amenityText: {
+    color: '#00C851',
+    fontSize: 12,
+    marginLeft: 4,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    marginBottom: 12,
+    overflow: 'hidden',
+  },
+  menuImage: {
+    width: 100,
+    height: 100,
+  },
+  menuInfo: {
+    flex: 1,
+    padding: 12,
+    justifyContent: 'space-between',
+  },
+  menuCategory: {
+    color: '#888',
+    fontSize: 10,
+    textTransform: 'uppercase',
+  },
+  menuName: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 4,
+  },
+  menuPrice: {
+    color: '#f5dd4b',
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginTop: 4,
+  },
+  ambienceGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  ambienceItem: {
+    width: (width - 52) / 2,
+    height: 200,
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginBottom: 12,
+    position: 'relative',
+  },
+  ambienceImage: {
+    width: '100%',
+    height: '100%',
+  },
+  playButton: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    transform: [{ translateX: -24 }, { translateY: -24 }],
+  },
+  emptyText: {
+    color: '#888',
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 40,
+  },
+  bottomSpacer: {
+    height: 100,
+  },
+  bottomContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 20,
+    backgroundColor: 'rgba(0,0,0,0.95)',
+    borderTopWidth: 1,
+    borderTopColor: '#222',
+  },
+  bookButton: {
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  bookGradient: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 16,
+  },
+  bookButtonText: {
+    color: '#111',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginRight: 8,
+  },
+});
+</file>
+
+<file path="src/screens/main/BookingsScreen.tsx">
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  StatusBar,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import StarlightBackground from '../../components/StarlightBackground';
+import { useStore } from '../../store/useStore';
+import { bookingsAPI } from '../../services/api';
+
+interface Booking {
+  id: string;
+  eventId: string;
+  eventName: string;
+  eventImage?: string;
+  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
+  bookingDate: string;
+  amountPaid: number;
+  bookingType: 'event' | 'apartment' | 'car';
+  isGroupBooking: boolean;
+}
+
+export default function BookingsScreen({ navigation }: any) {
+  const user = useStore((state) => state.user);
+  const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming');
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchBookings();
+  }, []);
+
+  const fetchBookings = async () => {
+    try {
+      setLoading(true);
+      if (user?.id) {
+        const response = await bookingsAPI.getMyBookings(user.id);
+        setBookings(response.bookings || []);
+      }
+    } catch (error) {
+      console.error('Error fetching bookings:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'confirmed':
+        return '#00C851';
+      case 'pending':
+        return '#f5dd4b';
+      case 'cancelled':
+        return '#ff4444';
+      case 'completed':
+        return '#888';
+      default:
+        return '#666';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'confirmed':
+        return 'checkmark-circle';
+      case 'pending':
+        return 'time';
+      case 'cancelled':
+        return 'close-circle';
+      case 'completed':
+        return 'checkmark-done-circle';
+      default:
+        return 'information-circle';
+    }
+  };
+
+  const getBookingTypeIcon = (type: string) => {
+    switch (type) {
+      case 'event':
+        return 'musical-notes';
+      case 'apartment':
+        return 'home';
+      case 'car':
+        return 'car-sport';
+      default:
+        return 'calendar';
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  };
+
+  const upcomingBookings = bookings.filter(
+    (b) => b.status === 'confirmed' || b.status === 'pending'
+  );
+
+  const pastBookings = bookings.filter(
+    (b) => b.status === 'completed' || b.status === 'cancelled'
+  );
+
+  const displayBookings = activeTab === 'upcoming' ? upcomingBookings : pastBookings;
+
+  const renderBooking = (booking: Booking) => (
+    <TouchableOpacity
+      key={booking.id}
+      style={styles.bookingCard}
+      onPress={() => {
+        if (booking.bookingType === 'event') {
+          navigation.navigate('Ticket', { bookingId: booking.id });
+        } else if (booking.bookingType === 'apartment') {
+          navigation.navigate('ApartmentDetails', { apartmentId: booking.eventId });
+        } else if (booking.bookingType === 'car') {
+          navigation.navigate('CarDetails', { carId: booking.eventId });
+        }
+      }}
+      activeOpacity={0.8}
+    >
+      <Image
+        source={{
+          uri: booking.eventImage || 'https://via.placeholder.com/150',
+        }}
+        style={styles.bookingImage}
+      />
+      <View style={styles.bookingInfo}>
+        <View style={styles.bookingHeader}>
+          <View style={styles.bookingTypeContainer}>
+            <Ionicons
+              name={getBookingTypeIcon(booking.bookingType)}
+              size={14}
+              color="#f5dd4b"
+            />
+            <Text style={styles.bookingType}>
+              {booking.bookingType.charAt(0).toUpperCase() + booking.bookingType.slice(1)}
+            </Text>
+          </View>
+          {booking.isGroupBooking && (
+            <View style={styles.groupBadge}>
+              <Ionicons name="people" size={12} color="#f5dd4b" />
+              <Text style={styles.groupText}>Group</Text>
+            </View>
+          )}
+        </View>
+
+        <Text style={styles.bookingName} numberOfLines={2}>
+          {booking.eventName}
+        </Text>
+
+        <Text style={styles.bookingDate}>{formatDate(booking.bookingDate)}</Text>
+
+        <View style={styles.bookingFooter}>
+          <Text style={styles.bookingAmount}>₦{booking.amountPaid.toLocaleString()}</Text>
+
+          <View
+            style={[
+              styles.statusBadge,
+              { backgroundColor: getStatusColor(booking.status) + '20' },
+            ]}
+          >
+            <Ionicons
+              name={getStatusIcon(booking.status)}
+              size={12}
+              color={getStatusColor(booking.status)}
+            />
+            <Text style={[styles.statusText, { color: getStatusColor(booking.status) }]}>
+              {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+            </Text>
+          </View>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+
+  return (
+    <View style={styles.container}>
+      <StarlightBackground />
+      <StatusBar barStyle="light-content" />
+
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>My Bookings</Text>
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => navigation.navigate('Discover')}
+        >
+          <Ionicons name="add" size={24} color="#fff" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Tabs */}
+      <View style={styles.tabsContainer}>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'upcoming' && styles.tabActive]}
+          onPress={() => setActiveTab('upcoming')}
+        >
+          <Text
+            style={[styles.tabText, activeTab === 'upcoming' && styles.tabTextActive]}
+          >
+            Upcoming ({upcomingBookings.length})
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'past' && styles.tabActive]}
+          onPress={() => setActiveTab('past')}
+        >
+          <Text style={[styles.tabText, activeTab === 'past' && styles.tabTextActive]}>
+            Past ({pastBookings.length})
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Bookings List */}
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.bookingsList}
+      >
+        {loading ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>Loading bookings...</Text>
+          </View>
+        ) : displayBookings.length > 0 ? (
+          displayBookings.map(renderBooking)
+        ) : (
+          <View style={styles.emptyContainer}>
+            <Ionicons name="calendar-outline" size={64} color="#444" />
+            <Text style={styles.emptyText}>
+              {activeTab === 'upcoming' ? 'No upcoming bookings' : 'No past bookings'}
+            </Text>
+            <Text style={styles.emptySubtext}>
+              {activeTab === 'upcoming'
+                ? 'Book your first event, apartment, or car!'
+                : 'Your booking history will appear here'}
+            </Text>
+            <TouchableOpacity
+              style={styles.exploreButton}
+              onPress={() => navigation.navigate('Discover')}
+            >
+              <Text style={styles.exploreButtonText}>Explore Now</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+        <View style={styles.bottomSpacer} />
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 20,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  addButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f5dd4b',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  tabsContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+  },
+  tabActive: {
+    borderBottomColor: '#f5dd4b',
+  },
+  tabText: {
+    color: '#666',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  tabTextActive: {
+    color: '#f5dd4b',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  bookingsList: {
+    paddingHorizontal: 20,
+  },
+  bookingCard: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    marginBottom: 12,
+    overflow: 'hidden',
+  },
+  bookingImage: {
+    width: 100,
+    height: 120,
+  },
+  bookingInfo: {
+    flex: 1,
+    padding: 12,
+    justifyContent: 'space-between',
+  },
+  bookingHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  bookingTypeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  bookingType: {
+    color: '#f5dd4b',
+    fontSize: 10,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    marginLeft: 4,
+  },
+  groupBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(245, 221, 75, 0.1)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  groupText: {
+    color: '#f5dd4b',
+    fontSize: 10,
+    marginLeft: 2,
+  },
+  bookingName: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  bookingDate: {
+    color: '#888',
+    fontSize: 12,
+    marginBottom: 8,
+  },
+  bookingFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  bookingAmount: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  statusText: {
+    fontSize: 11,
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 80,
+  },
+  emptyText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 16,
+  },
+  emptySubtext: {
+    color: '#666',
+    fontSize: 14,
+    marginTop: 8,
+    textAlign: 'center',
+    paddingHorizontal: 40,
+  },
+  exploreButton: {
+    backgroundColor: '#f5dd4b',
+    paddingHorizontal: 32,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 24,
+  },
+  exploreButtonText: {
+    color: '#000',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  bottomSpacer: {
+    height: 40,
+  },
+});
+</file>
+
+<file path="src/screens/main/DiscoverScreen.tsx">
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  TextInput,
+  StatusBar,
+  Image,
+  Dimensions,
+  ActivityIndicator,
+  RefreshControl,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import StarlightBackground from '../../components/StarlightBackground';
+import { eventsAPI } from '../../services/api';
+
+const { width } = Dimensions.get('window');
+
+interface Event {
+  id: string;
+  name: string;
+  date: string;
+  location: string;
+  category: string;
+  coverImage: string;
+  price: number;
+}
+
+export default function DiscoverScreen({ navigation }: any) {
+  const [activeCategory, setActiveCategory] = useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [events, setEvents] = useState<Event[]>([]);
+  const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const categories = ['All', 'Club', 'Concert', 'Festival', 'Party'];
+
+  useEffect(() => {
+    fetchEvents();
+  }, []);
+
+  useEffect(() => {
+    filterEvents();
+  }, [activeCategory, searchQuery, events]);
+
+  const fetchEvents = async (isPullToRefresh = false) => {
+    try {
+      if (!isPullToRefresh) {
+        setIsLoading(true);
+      } else {
+        setIsRefreshing(true);
+      }
+      setError(null);
+      
+      const response = await eventsAPI.getEvents({ page: 1, pageSize: 20 });
+      
+      if (response.events) {
+        setEvents(response.events);
+      } else {
+        setEvents([]);
+        if (!isPullToRefresh) {
+          setError('No events available at the moment.');
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching events:', error);
+      setError('Failed to load events. Please check your connection and try again.');
+      setEvents([]);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  const handleRefresh = () => {
+    fetchEvents(true);
+  };
+
+  const filterEvents = () => {
+    let filtered = events;
+
+    // Filter by category
+    if (activeCategory !== 'All') {
+      filtered = filtered.filter(
+        (event) => event.category.toLowerCase() === activeCategory.toLowerCase()
+      );
+    }
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      filtered = filtered.filter(
+        (event) =>
+          event.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          event.location.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    setFilteredEvents(filtered);
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
+  const renderEvent = (event: Event) => (
+    <TouchableOpacity
+      key={event.id}
+      style={styles.eventCard}
+      onPress={() => navigation.navigate('EventDetails', { eventId: event.id })}
+      activeOpacity={0.8}
+    >
+      <Image
+        source={{ uri: event.coverImage || 'https://via.placeholder.com/400x250' }}
+        style={styles.eventImage}
+      />
+      <LinearGradient
+        colors={['transparent', 'rgba(0,0,0,0.9)']}
+        style={styles.eventGradient}
+      >
+        <View style={styles.eventInfo}>
+          <Text style={styles.eventCategory}>{event.category.toUpperCase()}</Text>
+          <Text style={styles.eventName} numberOfLines={2}>
+            {event.name}
+          </Text>
+          <View style={styles.eventMeta}>
+            <View style={styles.metaItem}>
+              <Ionicons name="calendar-outline" size={14} color="#f5dd4b" />
+              <Text style={styles.metaText}>{formatDate(event.date)}</Text>
+            </View>
+            <View style={styles.metaItem}>
+              <Ionicons name="location-outline" size={14} color="#f5dd4b" />
+              <Text style={styles.metaText} numberOfLines={1}>
+                {event.location}
+              </Text>
+            </View>
+          </View>
+          <Text style={styles.eventPrice}>From ₦{event.price.toLocaleString()}</Text>
+        </View>
+      </LinearGradient>
+    </TouchableOpacity>
+  );
+
+  const renderContent = () => {
+    if (isLoading && !isRefreshing) {
+      return (
+        <View style={styles.centeredContainer}>
+          <ActivityIndicator size="large" color="#f5dd4b" />
+          <Text style={styles.loadingText}>Loading events...</Text>
+        </View>
+      );
+    }
+
+    if (error && events.length === 0) {
+      return (
+        <View style={styles.centeredContainer}>
+          <Ionicons name="alert-circle-outline" size={64} color="#ff6b6b" />
+          <Text style={styles.errorTitle}>Oops! Something went wrong</Text>
+          <Text style={styles.errorMessage}>{error}</Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => fetchEvents()}
+          >
+            <Text style={styles.retryButtonText}>Try Again</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    if (filteredEvents.length > 0) {
+      return filteredEvents.map(renderEvent);
+    }
+
+    if (searchQuery.trim() || activeCategory !== 'All') {
+      return (
+        <View style={styles.centeredContainer}>
+          <Ionicons name="search-outline" size={64} color="#444" />
+          <Text style={styles.emptyText}>No events found</Text>
+          <Text style={styles.emptySubtext}>Try adjusting your filters</Text>
+          {(searchQuery.trim() || activeCategory !== 'All') && (
+            <TouchableOpacity
+              style={styles.clearFiltersButton}
+              onPress={() => {
+                setSearchQuery('');
+                setActiveCategory('All');
+              }}
+            >
+              <Text style={styles.clearFiltersText}>Clear Filters</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.centeredContainer}>
+        <Ionicons name="calendar-outline" size={64} color="#444" />
+        <Text style={styles.emptyText}>No events available</Text>
+        <Text style={styles.emptySubtext}>Check back later for new events</Text>
+        <TouchableOpacity
+          style={styles.retryButton}
+          onPress={() => fetchEvents()}
+        >
+          <Text style={styles.retryButtonText}>Refresh</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
+  return (
+    <View style={styles.container}>
+      <StarlightBackground />
+      <StatusBar barStyle="light-content" />
+
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Discover</Text>
+        <TouchableOpacity style={styles.filterButton}>
+          <Ionicons name="options-outline" size={24} color="#fff" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <Ionicons name="search-outline" size={20} color="#888" style={styles.searchIcon} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search events, venues..."
+          placeholderTextColor="#666"
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity onPress={() => setSearchQuery('')}>
+            <Ionicons name="close-circle" size={20} color="#888" />
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Quick Access Buttons */}
+      <View style={styles.quickAccessContainer}>
+        <TouchableOpacity
+          style={styles.quickAccessButton}
+          onPress={() => navigation.navigate('ApartmentList')}
+        >
+          <Ionicons name="home" size={20} color="#f5dd4b" />
+          <Text style={styles.quickAccessText}>Apartments</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.quickAccessButton}
+          onPress={() => navigation.navigate('CarList')}
+        >
+          <Ionicons name="car-sport" size={20} color="#f5dd4b" />
+          <Text style={styles.quickAccessText}>Cars</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.quickAccessButton}>
+          <Ionicons name="ticket" size={20} color="#f5dd4b" />
+          <Text style={styles.quickAccessText}>Tickets</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Categories */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.categoriesContainer}
+        contentContainerStyle={styles.categoriesContent}
+      >
+        {categories.map((category) => (
+          <TouchableOpacity
+            key={category}
+            style={[
+              styles.categoryChip,
+              activeCategory === category && styles.categoryChipActive,
+            ]}
+            onPress={() => setActiveCategory(category)}
+          >
+            <Text
+              style={[
+                styles.categoryText,
+                activeCategory === category && styles.categoryTextActive,
+              ]}
+            >
+              {category}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
+      {/* Events Grid */}
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[
+          styles.eventsGrid,
+          (isLoading || error || filteredEvents.length === 0) && styles.centeredContent,
+        ]}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            tintColor="#f5dd4b"
+            colors={['#f5dd4b']}
+            title="Pull to refresh"
+            titleColor="#888"
+          />
+        }
+      >
+        {renderContent()}
+        {filteredEvents.length > 0 && <View style={styles.bottomSpacer} />}
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 20,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  filterButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    marginHorizontal: 20,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  searchIcon: {
+    marginRight: 12,
+  },
+  searchInput: {
+    flex: 1,
+    color: '#fff',
+    fontSize: 16,
+    paddingVertical: 12,
+  },
+  quickAccessContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  quickAccessButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(245, 221, 75, 0.1)',
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginHorizontal: 4,
+  },
+  quickAccessText: {
+    color: '#f5dd4b',
+    fontSize: 12,
+    fontWeight: '600',
+    marginLeft: 6,
+  },
+  categoriesContainer: {
+    marginBottom: 20,
+  },
+  categoriesContent: {
+    paddingHorizontal: 20,
+  },
+  categoryChip: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  categoryChipActive: {
+    backgroundColor: '#f5dd4b',
+    borderColor: '#f5dd4b',
+  },
+  categoryText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  categoryTextActive: {
+    color: '#000',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  eventsGrid: {
+    paddingHorizontal: 20,
+  },
+  centeredContent: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  eventCard: {
+    width: '100%',
+    height: 250,
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginBottom: 16,
+  },
+  eventImage: {
+    width: '100%',
+    height: '100%',
+  },
+  eventGradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '70%',
+    justifyContent: 'flex-end',
+    padding: 16,
+  },
+  eventInfo: {},
+  eventCategory: {
+    color: '#f5dd4b',
+    fontSize: 10,
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+  eventName: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  eventMeta: {
+    flexDirection: 'row',
+    marginBottom: 8,
+  },
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  metaText: {
+    color: '#fff',
+    fontSize: 12,
+    marginLeft: 4,
+  },
+  eventPrice: {
+    color: '#f5dd4b',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  centeredContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+    width: '100%',
+  },
+  loadingText: {
+    color: '#f5dd4b',
+    fontSize: 16,
+    marginTop: 16,
+  },
+  errorTitle: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  errorMessage: {
+    color: '#888',
+    fontSize: 14,
+    marginTop: 8,
+    textAlign: 'center',
+    marginHorizontal: 20,
+  },
+  emptyText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 16,
+  },
+  emptySubtext: {
+    color: '#666',
+    fontSize: 14,
+    marginTop: 8,
+  },
+  retryButton: {
+    backgroundColor: 'rgba(245, 221, 75, 0.2)',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 20,
+    borderWidth: 1,
+    borderColor: '#f5dd4b',
+  },
+  retryButtonText: {
+    color: '#f5dd4b',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  clearFiltersButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 20,
+  },
+  clearFiltersText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  bottomSpacer: {
+    height: 40,
+  },
+});
+</file>
+
+<file path="src/screens/main/HomeScreen.tsx">
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  Dimensions,
+  RefreshControl,
+  StatusBar,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import StarlightBackground from '../../components/StarlightBackground';
+import { useStore } from '../../store/useStore';
+import { eventsAPI } from '../../services/api';
+
+const { width } = Dimensions.get('window');
+
+interface Event {
+  id: string;
+  name: string;
+  date: string;
+  location: string;
+  category: string;
+  coverImage: string;
+  price: number;
+  status: string;
+}
+
+export default function HomeScreen({ navigation }: any) {
+  const user = useStore((state) => state.user);
+  const [featuredEvents, setFeaturedEvents] = useState<Event[]>([]);
+  const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchEvents();
+  }, []);
+
+  const fetchEvents = async () => {
+    try {
+      setLoading(true);
+      const response = await eventsAPI.getEvents({
+        page: 1,
+        pageSize: 10,
+      });
+      
+      const allEvents = response.events || [];
+      setFeaturedEvents(allEvents.slice(0, 3));
+      setUpcomingEvents(allEvents.slice(3));
+    } catch (error) {
+      console.error('Error fetching events:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchEvents();
+    setRefreshing(false);
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric',
+      year: 'numeric' 
+    });
+  };
+
+  const renderFeaturedEvent = (event: Event) => (
+    <TouchableOpacity
+      key={event.id}
+      style={styles.featuredCard}
+      onPress={() => navigation.navigate('EventDetails', { eventId: event.id })}
+      activeOpacity={0.9}
+    >
+      <Image
+        source={{ uri: event.coverImage || 'https://via.placeholder.com/400x250' }}
+        style={styles.featuredImage}
+      />
+      <LinearGradient
+        colors={['transparent', 'rgba(0,0,0,0.9)']}
+        style={styles.featuredGradient}
+      >
+        <View style={styles.featuredInfo}>
+          <Text style={styles.featuredCategory}>{event.category.toUpperCase()}</Text>
+          <Text style={styles.featuredTitle}>{event.name}</Text>
+          <View style={styles.featuredMeta}>
+            <View style={styles.metaItem}>
+              <Ionicons name="calendar-outline" size={14} color="#f5dd4b" />
+              <Text style={styles.metaText}>{formatDate(event.date)}</Text>
+            </View>
+            <View style={styles.metaItem}>
+              <Ionicons name="location-outline" size={14} color="#f5dd4b" />
+              <Text style={styles.metaText}>{event.location}</Text>
+            </View>
+          </View>
+          <View style={styles.priceContainer}>
+            <Text style={styles.priceLabel}>From</Text>
+            <Text style={styles.priceValue}>₦{event.price.toLocaleString()}</Text>
+          </View>
+        </View>
+      </LinearGradient>
+    </TouchableOpacity>
+  );
+
+  const renderUpcomingEvent = (event: Event) => (
+    <TouchableOpacity
+      key={event.id}
+      style={styles.upcomingCard}
+      onPress={() => navigation.navigate('EventDetails', { eventId: event.id })}
+      activeOpacity={0.8}
+    >
+      <Image
+        source={{ uri: event.coverImage || 'https://via.placeholder.com/150' }}
+        style={styles.upcomingImage}
+      />
+      <View style={styles.upcomingInfo}>
+        <Text style={styles.upcomingCategory}>{event.category}</Text>
+        <Text style={styles.upcomingTitle} numberOfLines={2}>
+          {event.name}
+        </Text>
+        <View style={styles.upcomingMeta}>
+          <Ionicons name="calendar-outline" size={12} color="#888" />
+          <Text style={styles.upcomingDate}>{formatDate(event.date)}</Text>
+        </View>
+        <View style={styles.upcomingMeta}>
+          <Ionicons name="location-outline" size={12} color="#888" />
+          <Text style={styles.upcomingLocation} numberOfLines={1}>
+            {event.location}
+          </Text>
+        </View>
+        <Text style={styles.upcomingPrice}>₦{event.price.toLocaleString()}</Text>
+      </View>
+    </TouchableOpacity>
+  );
+
+  return (
+    <View style={styles.container}>
+      <StarlightBackground />
+      <StatusBar barStyle="light-content" />
+      
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#f5dd4b" />
+        }
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.greeting}>Hey {user?.name?.split(' ')[0] || 'There'}! 👋</Text>
+            <Text style={styles.subtitle}>Discover tonight's hottest events</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.notificationButton}
+            onPress={() => navigation.navigate('Profile')}
+          >
+            <Ionicons name="notifications-outline" size={24} color="#fff" />
+            <View style={styles.notificationBadge}>
+              <Text style={styles.badgeText}>3</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* Quick Actions - UPDATED with Apartments & Cars */}
+        <View style={styles.quickActions}>
+          <TouchableOpacity 
+            style={styles.actionButton} 
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('Discover')}
+          >
+            <View style={styles.actionIcon}>
+              <Ionicons name="search" size={20} color="#f5dd4b" />
+            </View>
+            <Text style={styles.actionText}>Search</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.actionButton} 
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('ApartmentList')}
+          >
+            <View style={styles.actionIcon}>
+              <Ionicons name="home" size={20} color="#f5dd4b" />
+            </View>
+            <Text style={styles.actionText}>Apartments</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.actionButton} 
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('CarList')}
+          >
+            <View style={styles.actionIcon}>
+              <Ionicons name="car" size={20} color="#f5dd4b" />
+            </View>
+            <Text style={styles.actionText}>Cars</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.actionButton} 
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('Bookings')}
+          >
+            <View style={styles.actionIcon}>
+              <Ionicons name="calendar" size={20} color="#f5dd4b" />
+            </View>
+            <Text style={styles.actionText}>Bookings</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Featured Events */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Featured Events</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Discover')}>
+              <Text style={styles.seeAll}>See All</Text>
+            </TouchableOpacity>
+          </View>
+          
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.featuredScroll}
+          >
+            {featuredEvents.map(renderFeaturedEvent)}
+          </ScrollView>
+        </View>
+
+        {/* Upcoming Events */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Upcoming This Week</Text>
+          {upcomingEvents.map(renderUpcomingEvent)}
+        </View>
+
+        {/* Quick Access Cards - NEW */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Quick Access</Text>
+          
+          {/* Apartments Card */}
+          <TouchableOpacity 
+            style={styles.quickAccessCard} 
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate('ApartmentList')}
+          >
+            <LinearGradient
+              colors={['#4a148c', '#7b1fa2']}
+              style={styles.quickAccessGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <View style={styles.quickAccessContent}>
+                <Ionicons name="home" size={32} color="#fff" />
+                <View style={styles.quickAccessText}>
+                  <Text style={styles.quickAccessTitle}>Apartments</Text>
+                  <Text style={styles.quickAccessSubtitle}>
+                    Find your perfect stay
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={24} color="#fff" />
+              </View>
+            </LinearGradient>
+          </TouchableOpacity>
+
+          {/* Car Rental Card */}
+          <TouchableOpacity 
+            style={styles.quickAccessCard} 
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate('CarList')}
+          >
+            <LinearGradient
+              colors={['#01579b', '#0277bd']}
+              style={styles.quickAccessGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <View style={styles.quickAccessContent}>
+                <Ionicons name="car-sport" size={32} color="#fff" />
+                <View style={styles.quickAccessText}>
+                  <Text style={styles.quickAccessTitle}>Car Rentals</Text>
+                  <Text style={styles.quickAccessSubtitle}>
+                    Drive in style
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={24} color="#fff" />
+              </View>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.bottomSpacer} />
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 20,
+  },
+  greeting: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#888',
+  },
+  notificationButton: {
+    position: 'relative',
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: '#ff4444',
+    borderRadius: 10,
+    width: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  quickActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingHorizontal: 20,
+    marginBottom: 30,
+  },
+  actionButton: {
+    alignItems: 'center',
+  },
+  actionIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(245, 221, 75, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  actionText: {
+    color: '#fff',
+    fontSize: 12,
+  },
+  section: {
+    marginBottom: 30,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#fff',
+    paddingHorizontal: 20,
+    marginBottom: 16,
+  },
+  seeAll: {
+    color: '#f5dd4b',
+    fontSize: 14,
+  },
+  featuredScroll: {
+    paddingLeft: 20,
+  },
+  featuredCard: {
+    width: width * 0.85,
+    height: 300,
+    marginRight: 16,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  featuredImage: {
+    width: '100%',
+    height: '100%',
+  },
+  featuredGradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '60%',
+    justifyContent: 'flex-end',
+    padding: 20,
+  },
+  featuredInfo: {},
+  featuredCategory: {
+    color: '#f5dd4b',
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  featuredTitle: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  featuredMeta: {
+    flexDirection: 'row',
+    marginBottom: 16,
+  },
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  metaText: {
+    color: '#fff',
+    fontSize: 12,
+    marginLeft: 4,
+  },
+  priceContainer: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+  },
+  priceLabel: {
+    color: '#888',
+    fontSize: 12,
+    marginRight: 4,
+  },
+  priceValue: {
+    color: '#f5dd4b',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  upcomingCard: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    marginHorizontal: 20,
+    marginBottom: 12,
+    overflow: 'hidden',
+  },
+  upcomingImage: {
+    width: 120,
+    height: 120,
+  },
+  upcomingInfo: {
+    flex: 1,
+    padding: 12,
+    justifyContent: 'space-between',
+  },
+  upcomingCategory: {
+    color: '#f5dd4b',
+    fontSize: 10,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+  },
+  upcomingTitle: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginTop: 4,
+  },
+  upcomingMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  upcomingDate: {
+    color: '#888',
+    fontSize: 12,
+    marginLeft: 4,
+  },
+  upcomingLocation: {
+    color: '#888',
+    fontSize: 12,
+    marginLeft: 4,
+    flex: 1,
+  },
+  upcomingPrice: {
+    color: '#f5dd4b',
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginTop: 4,
+  },
+  quickAccessCard: {
+    marginHorizontal: 20,
+    marginBottom: 12,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  quickAccessGradient: {
+    padding: 20,
+  },
+  quickAccessContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  quickAccessText: {
+    flex: 1,
+    marginLeft: 16,
+  },
+  quickAccessTitle: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  quickAccessSubtitle: {
+    color: '#fff',
+    fontSize: 12,
+    marginTop: 2,
+    opacity: 0.8,
+  },
+  bottomSpacer: {
+    height: 40,
+  },
+});
+</file>
+
+<file path="src/screens/main/ProfileScreen.tsx">
+import React from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  StatusBar,
+  Alert,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import StarlightBackground from '../../components/StarlightBackground';
+import { useStore } from '../../store/useStore';
+
+export default function ProfileScreen({ navigation }: any) {
+  const user = useStore((state) => state.user);
+  const logout = useStore((state) => state.logout);
+  const walletBalance = useStore((state) => state.walletBalance);
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: () => logout(),
+        },
+      ]
+    );
+  };
+
+  const menuItems = [
+    {
+      id: 'wallet',
+      icon: 'wallet',
+      title: 'Wallet',
+      subtitle: `₦${walletBalance.toLocaleString()}`,
+      color: '#f5dd4b',
+      onPress: () => navigation.navigate('Wallet'),
+    },
+    {
+      id: 'bookings',
+      icon: 'calendar',
+      title: 'My Bookings',
+      subtitle: 'View all bookings',
+      color: '#00C851',
+      onPress: () => navigation.navigate('Bookings'),
+    },
+    {
+      id: 'settings',
+      icon: 'settings',
+      title: 'Settings',
+      subtitle: 'App preferences',
+      color: '#888',
+      onPress: () => navigation.navigate('Settings'),
+    },
+    {
+      id: 'emergency',
+      icon: 'alert-circle',
+      title: 'Emergency SOS',
+      subtitle: 'Safety features',
+      color: '#ff4444',
+      onPress: () => navigation.navigate('EmergencySOS'),
+    },
+  ];
+
+  const quickActions = [
+    { icon: 'qr-code', label: 'QR Code', onPress: () => {} },
+    { icon: 'share-social', label: 'Share App', onPress: () => {} },
+    { icon: 'help-circle', label: 'Help', onPress: () => {} },
+  ];
+
+  return (
+    <View style={styles.container}>
+      <StarlightBackground />
+      <StatusBar barStyle="light-content" />
+
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Profile</Text>
+          <TouchableOpacity style={styles.editButton}>
+            <Ionicons name="create-outline" size={24} color="#fff" />
+          </TouchableOpacity>
+        </View>
+
+        {/* Profile Card */}
+        <View style={styles.profileCard}>
+          <LinearGradient
+            colors={['rgba(245, 221, 75, 0.2)', 'rgba(245, 221, 75, 0.05)']}
+            style={styles.profileGradient}
+          >
+            <View style={styles.avatarContainer}>
+              {user?.profileImage ? (
+                <Image source={{ uri: user.profileImage }} style={styles.avatar} />
+              ) : (
+                <View style={styles.avatarPlaceholder}>
+                  <Text style={styles.avatarText}>
+                    {user?.name?.charAt(0).toUpperCase() || 'U'}
+                  </Text>
+                </View>
+              )}
+              <TouchableOpacity style={styles.avatarBadge}>
+                <Ionicons name="camera" size={16} color="#fff" />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.userName}>{user?.name || 'User'}</Text>
+            <Text style={styles.userEmail}>{user?.email || 'user@example.com'}</Text>
+
+            {/* Stats */}
+            <View style={styles.statsContainer}>
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>12</Text>
+                <Text style={styles.statLabel}>Events</Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>8</Text>
+                <Text style={styles.statLabel}>Bookings</Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>5</Text>
+                <Text style={styles.statLabel}>Favorites</Text>
+              </View>
+            </View>
+          </LinearGradient>
+        </View>
+
+        {/* Quick Actions */}
+        <View style={styles.quickActionsContainer}>
+          {quickActions.map((action, index) => (
+            <TouchableOpacity
+              key={index}
+              style={styles.quickActionButton}
+              onPress={action.onPress}
+            >
+              <View style={styles.quickActionIcon}>
+                <Ionicons name={action.icon as any} size={24} color="#f5dd4b" />
+              </View>
+              <Text style={styles.quickActionLabel}>{action.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Menu Items */}
+        <View style={styles.menuContainer}>
+          {menuItems.map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              style={styles.menuItem}
+              onPress={item.onPress}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.menuIcon, { backgroundColor: `${item.color}20` }]}>
+                <Ionicons name={item.icon as any} size={24} color={item.color} />
+              </View>
+              <View style={styles.menuContent}>
+                <Text style={styles.menuTitle}>{item.title}</Text>
+                <Text style={styles.menuSubtitle}>{item.subtitle}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#666" />
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Logout Button */}
+        <TouchableOpacity
+          style={styles.logoutButton}
+          onPress={handleLogout}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="log-out-outline" size={20} color="#ff4444" />
+          <Text style={styles.logoutText}>Logout</Text>
+        </TouchableOpacity>
+
+        {/* App Version */}
+        <Text style={styles.versionText}>ClubSync v1.0.0</Text>
+
+        <View style={styles.bottomSpacer} />
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 20,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  editButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  profileCard: {
+    marginHorizontal: 20,
+    borderRadius: 20,
+    overflow: 'hidden',
+    marginBottom: 20,
+  },
+  profileGradient: {
+    padding: 24,
+    alignItems: 'center',
+  },
+  avatarContainer: {
+    position: 'relative',
+    marginBottom: 16,
+  },
+  avatar: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 3,
+    borderColor: '#f5dd4b',
+  },
+  avatarPlaceholder: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#f5dd4b',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: '#f5dd4b',
+  },
+  avatarText: {
+    fontSize: 40,
+    fontWeight: 'bold',
+    color: '#000',
+  },
+  avatarBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#f5dd4b',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#000',
+  },
+  userName: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 4,
+  },
+  userEmail: {
+    fontSize: 14,
+    color: '#888',
+    marginBottom: 20,
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    width: '100%',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    borderRadius: 12,
+    padding: 16,
+  },
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#f5dd4b',
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#888',
+  },
+  statDivider: {
+    width: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  quickActionsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginHorizontal: 20,
+    marginBottom: 24,
+  },
+  quickActionButton: {
+    alignItems: 'center',
+  },
+  quickActionIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(245, 221, 75, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  quickActionLabel: {
+    color: '#fff',
+    fontSize: 12,
+  },
+  menuContainer: {
+    marginHorizontal: 20,
+    marginBottom: 24,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+  },
+  menuIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  menuContent: {
+    flex: 1,
+    marginLeft: 16,
+  },
+  menuTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
+    marginBottom: 2,
+  },
+  menuSubtitle: {
+    fontSize: 12,
+    color: '#888',
+  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 20,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#ff4444',
+    backgroundColor: 'rgba(255, 68, 68, 0.1)',
+    marginBottom: 16,
+  },
+  logoutText: {
+    color: '#ff4444',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  versionText: {
+    textAlign: 'center',
+    color: '#666',
+    fontSize: 12,
+    marginBottom: 20,
+  },
+  bottomSpacer: {
+    height: 40,
+  },
+});
+</file>
+
+<file path="src/screens/payments/PaymentScreen.tsx">
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import StarlightBackground from '../../components/StarlightBackground';
+
+export default function PaymentScreen({ navigation }: any) {
+  return (
+    <View style={styles.container}>
+      <StarlightBackground />
+      
+      <TouchableOpacity 
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
+        <Ionicons name="arrow-back" size={24} color="#fff" />
+      </TouchableOpacity>
+
+      <View style={styles.content}>
+        <Ionicons name="card-outline" size={64} color="#f5dd4b" />
+        <Text style={styles.title}>Payment</Text>
+        <Text style={styles.subtitle}>Coming Soon...</Text>
+        <Text style={styles.description}>
+          Secure payment with Stripe & Paystack
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  title: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginTop: 20,
+    marginBottom: 8,
+  },
+  subtitle: {
+    color: '#f5dd4b',
+    fontSize: 18,
+    marginBottom: 8,
+  },
+  description: {
+    color: '#888',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+});
+</file>
+
+<file path="src/screens/queue/QueueScreen.tsx">
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import StarlightBackground from '../../components/StarlightBackground';
+
+export default function QueueScreen({ navigation }: any) {
+  return (
+    <View style={styles.container}>
+      <StarlightBackground />
+      
+      <TouchableOpacity 
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
+        <Ionicons name="arrow-back" size={24} color="#fff" />
+      </TouchableOpacity>
+
+      <View style={styles.content}>
+        <Ionicons name="time-outline" size={64} color="#f5dd4b" />
+        <Text style={styles.title}>Queue Management</Text>
+        <Text style={styles.subtitle}>Coming Soon...</Text>
+        <Text style={styles.description}>
+          Join virtual queue and track your position
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  title: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginTop: 20,
+    marginBottom: 8,
+  },
+  subtitle: {
+    color: '#f5dd4b',
+    fontSize: 18,
+    marginBottom: 8,
+  },
+  description: {
+    color: '#888',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+});
+</file>
+
+<file path="src/screens/safety/EmergencySOSScreen.tsx">
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import StarlightBackground from '../../components/StarlightBackground';
+
+export default function EmergencySOSScreen({ navigation }: any) {
+  return (
+    <View style={styles.container}>
+      <StarlightBackground />
+      
+      <TouchableOpacity 
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
+        <Ionicons name="arrow-back" size={24} color="#fff" />
+      </TouchableOpacity>
+
+      <View style={styles.content}>
+        <Ionicons name="alert-circle-outline" size={64} color="#ff4444" />
+        <Text style={styles.title}>Emergency SOS</Text>
+        <Text style={styles.subtitle}>Coming Soon...</Text>
+        <Text style={styles.description}>
+          One-tap emergency contact and location sharing
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  title: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginTop: 20,
+    marginBottom: 8,
+  },
+  subtitle: {
+    color: '#f5dd4b',
+    fontSize: 18,
+    marginBottom: 8,
+  },
+  description: {
+    color: '#888',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+});
+</file>
+
+<file path="src/screens/settings/SettingsScreen.tsx">
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import StarlightBackground from '../../components/StarlightBackground';
+
+export default function SettingsScreen({ navigation }: any) {
+  return (
+    <View style={styles.container}>
+      <StarlightBackground />
+      
+      <TouchableOpacity 
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
+        <Ionicons name="arrow-back" size={24} color="#fff" />
+      </TouchableOpacity>
+
+      <View style={styles.content}>
+        <Ionicons name="settings-outline" size={64} color="#f5dd4b" />
+        <Text style={styles.title}>Settings</Text>
+        <Text style={styles.subtitle}>Coming Soon...</Text>
+        <Text style={styles.description}>
+          Manage app preferences and account settings
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  title: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginTop: 20,
+    marginBottom: 8,
+  },
+  subtitle: {
+    color: '#f5dd4b',
+    fontSize: 18,
+    marginBottom: 8,
+  },
+  description: {
+    color: '#888',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+});
+</file>
+
+<file path="src/screens/tickets/TicketScreen.tsx">
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import StarlightBackground from '../../components/StarlightBackground';
+
+export default function TicketScreen({ navigation }: any) {
+  return (
+    <View style={styles.container}>
+      <StarlightBackground />
+      
+      <TouchableOpacity 
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
+        <Ionicons name="arrow-back" size={24} color="#fff" />
+      </TouchableOpacity>
+
+      <View style={styles.content}>
+        <Ionicons name="qr-code-outline" size={64} color="#f5dd4b" />
+        <Text style={styles.title}>Digital Ticket</Text>
+        <Text style={styles.subtitle}>Coming Soon...</Text>
+        <Text style={styles.description}>
+          Your QR code ticket will appear here
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  title: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginTop: 20,
+    marginBottom: 8,
+  },
+  subtitle: {
+    color: '#f5dd4b',
+    fontSize: 18,
+    marginBottom: 8,
+  },
+  description: {
+    color: '#888',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+});
+</file>
+
+<file path="src/screens/wallet/WalletScreen.tsx">
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import StarlightBackground from '../../components/StarlightBackground';
+
+export default function WalletScreen({ navigation }: any) {
+  return (
+    <View style={styles.container}>
+      <StarlightBackground />
+      
+      <TouchableOpacity 
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
+        <Ionicons name="arrow-back" size={24} color="#fff" />
+      </TouchableOpacity>
+
+      <View style={styles.content}>
+        <Ionicons name="wallet-outline" size={64} color="#f5dd4b" />
+        <Text style={styles.title}>Wallet</Text>
+        <Text style={styles.subtitle}>Coming Soon...</Text>
+        <Text style={styles.description}>
+          Manage your balance and transactions
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  title: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginTop: 20,
+    marginBottom: 8,
+  },
+  subtitle: {
+    color: '#f5dd4b',
+    fontSize: 18,
+    marginBottom: 8,
+  },
+  description: {
+    color: '#888',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+});
+</file>
+
+<file path="src/services/api">
+
+</file>
+
+<file path="src/services/api.ts">
+import axios, { AxiosInstance, AxiosError } from 'axios';
+import { useStore } from '../store/useStore';
+
+const API_BASE_URL = 'https://api.clubsync.app';
+
+const apiClient: AxiosInstance = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 15000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = useStore.getState().authToken;
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error: AxiosError) => {
+    if (error.response?.status === 401) {
+      useStore.getState().logout();
+    }
+    return Promise.reject(error);
+  }
+);
+
+// ============================================
+// AUTH API
+// ============================================
+export const authAPI = {
+  login: async (email: string, password: string) => {
+    const response = await apiClient.post('/users/login', { email, password });
+    return response.data;
+  },
+
+  signup: async (data: {
+    name: string;
+    email: string;
+    password: string;
+    address?: string;
+    phone?: string;
+  }) => {
+    const response = await apiClient.post('/users/signup', {
+      ...data,
+      authProvider: 'email',
+    });
+    return response.data;
+  },
+
+  socialLogin: async (provider: 'google' | 'apple', token: string) => {
+    const response = await apiClient.post('/users/social-login', {
+      provider,
+      token,
+    });
+    return response.data;
+  },
+
+  forgotPassword: async (email: string) => {
+    const response = await apiClient.post('/users/forgot-password', { email });
+    return response.data;
+  },
+
+  resetPassword: async (token: string, newPassword: string) => {
+    const response = await apiClient.post('/users/reset-password', {
+      token,
+      newPassword,
+    });
+    return response.data;
+  },
+};
+
+// ============================================
+// EVENTS API
+// ============================================
+export const eventsAPI = {
+  getEvents: async (params?: {
+    location?: string;
+    category?: string;
+    startDate?: string;
+    endDate?: string;
+    page?: number;
+    pageSize?: number;
+  }) => {
+    const response = await apiClient.get('/events', { params });
+    return response.data;
+  },
+
+  getEventById: async (eventId: string) => {
+    const response = await apiClient.get(`/events/${eventId}`);
+    return response.data;
+  },
+
+  getEventMenu: async (eventId: string) => {
+    const response = await apiClient.get(`/events/${eventId}/menu`);
+    return response.data;
+  },
+
+  getEventAmbience: async (eventId: string) => {
+    const response = await apiClient.get(`/events/${eventId}/ambience`);
+    return response.data;
+  },
+};
+
+// ============================================
+// BOOKINGS API
+// ============================================
+export const bookingsAPI = {
+  createBooking: async (data: {
+    userId: string;
+    eventId: string;
+    bookingType: 'ticket' | 'table';
+    quantity?: number;
+    tableId?: string;
+    amountDue: number;
+  }) => {
+    const response = await apiClient.post('/bookings/create', data);
+    return response.data;
+  },
+
+  createGroupBooking: async (data: {
+    userId: string;
+    eventId: string;
+    taggedUsers: string[];
+    maxCapacity: number;
+    splits: Record<string, number>;
+  }) => {
+    const response = await apiClient.post('/bookings/group/create', data);
+    return response.data;
+  },
+
+  getMyBookings: async (userId: string) => {
+    const response = await apiClient.get(`/bookings/user/${userId}`);
+    return response.data;
+  },
+
+  getBookingById: async (bookingId: string) => {
+    const response = await apiClient.get(`/bookings/${bookingId}`);
+    return response.data;
+  },
+
+  cancelBooking: async (bookingId: string) => {
+    const response = await apiClient.post(`/bookings/${bookingId}/cancel`);
+    return response.data;
+  },
+
+  checkInBooking: async (bookingId: string, qrCode: string) => {
+    const response = await apiClient.post(`/bookings/${bookingId}/check-in`, {
+      qrCode,
+    });
+    return response.data;
+  },
+
+  acceptGroupInvite: async (bookingId: string) => {
+    const response = await apiClient.post(
+      `/bookings/group/${bookingId}/accept`
+    );
+    return response.data;
+  },
+
+  declineGroupInvite: async (bookingId: string) => {
+    const response = await apiClient.post(
+      `/bookings/group/${bookingId}/decline`
+    );
+    return response.data;
+  },
+
+  contributeToGroupBooking: async (bookingId: string, amount: number) => {
+    const response = await apiClient.post(
+      `/bookings/group/${bookingId}/contribute`,
+      { amount }
+    );
+    return response.data;
+  },
+};
+
+// ============================================
+// APARTMENTS API - NEW
+// ============================================
+export const apartmentsAPI = {
+  getApartments: async (params?: {
+    location?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    bedrooms?: number;
+    bathrooms?: number;
+    page?: number;
+    pageSize?: number;
+  }) => {
+    const response = await apiClient.get('/apartments', { params });
+    return response.data;
+  },
+
+  getApartmentById: async (apartmentId: string) => {
+    const response = await apiClient.get(`/apartments/${apartmentId}`);
+    return response.data;
+  },
+
+  bookApartment: async (data: {
+    userId: string;
+    apartmentId: string;
+    checkInDate: string;
+    checkOutDate: string;
+    guests: number;
+    totalAmount: number;
+  }) => {
+    const response = await apiClient.post('/apartments/book', data);
+    return response.data;
+  },
+
+  getApartmentReviews: async (apartmentId: string) => {
+    const response = await apiClient.get(`/apartments/${apartmentId}/reviews`);
+    return response.data;
+  },
+
+  addApartmentReview: async (
+    apartmentId: string,
+    data: {
+      userId: string;
+      rating: number;
+      comment: string;
+    }
+  ) => {
+    const response = await apiClient.post(
+      `/apartments/${apartmentId}/reviews`,
+      data
+    );
+    return response.data;
+  },
+};
+
+// ============================================
+// CAR RENTALS API - NEW
+// ============================================
+export const carsAPI = {
+  getCars: async (params?: {
+    location?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    carType?: string;
+    transmission?: 'automatic' | 'manual';
+    page?: number;
+    pageSize?: number;
+  }) => {
+    const response = await apiClient.get('/cars', { params });
+    return response.data;
+  },
+
+  getCarById: async (carId: string) => {
+    const response = await apiClient.get(`/cars/${carId}`);
+    return response.data;
+  },
+
+  bookCar: async (data: {
+    userId: string;
+    carId: string;
+    pickupDate: string;
+    returnDate: string;
+    pickupLocation: string;
+    returnLocation: string;
+    totalAmount: number;
+  }) => {
+    const response = await apiClient.post('/cars/book', data);
+    return response.data;
+  },
+
+  getCarReviews: async (carId: string) => {
+    const response = await apiClient.get(`/cars/${carId}/reviews`);
+    return response.data;
+  },
+
+  addCarReview: async (
+    carId: string,
+    data: {
+      userId: string;
+      rating: number;
+      comment: string;
+    }
+  ) => {
+    const response = await apiClient.post(`/cars/${carId}/reviews`, data);
+    return response.data;
+  },
+};
+
+// ============================================
+// PAYMENTS API
+// ============================================
+export const paymentsAPI = {
+  initiatePayment: async (data: {
+    bookingId: string;
+    bookingType: 'event' | 'apartment' | 'car';
+    amount: number;
+    currency: 'NGN' | 'USD' | 'EUR' | 'GBP';
+    paymentMethod: 'stripe' | 'paystack';
+  }) => {
+    const response = await apiClient.post('/payments/initiate', data);
+    return response.data;
+  },
+
+  verifyPayment: async (paymentReference: string) => {
+    const response = await apiClient.post('/payments/verify', {
+      paymentReference,
+    });
+    return response.data;
+  },
+
+  getPaymentStatus: async (userId: string) => {
+    const response = await apiClient.get('/payments/status', {
+      params: { userId },
+    });
+    return response.data;
+  },
+
+  getPaymentHistory: async (userId: string) => {
+    const response = await apiClient.get(`/payments/history/${userId}`);
+    return response.data;
+  },
+};
+
+// ============================================
+// QUEUE API
+// ============================================
+export const queueAPI = {
+  joinQueue: async (eventId: string, userId: string) => {
+    const response = await apiClient.post('/queue/join', { eventId, userId });
+    return response.data;
+  },
+
+  leaveQueue: async (queueId: string) => {
+    const response = await apiClient.post(`/queue/${queueId}/leave`);
+    return response.data;
+  },
+
+  getQueuePosition: async (queueId: string) => {
+    const response = await apiClient.get(`/queue/${queueId}/position`);
+    return response.data;
+  },
+};
+
+// ============================================
+// USER API
+// ============================================
+export const userAPI = {
+  getProfile: async (userId: string) => {
+    const response = await apiClient.get(`/users/${userId}`);
+    return response.data;
+  },
+
+  updateProfile: async (
+    userId: string,
+    data: {
+      name?: string;
+      phone?: string;
+      address?: string;
+      profileImage?: string;
+    }
+  ) => {
+    const response = await apiClient.put(`/users/${userId}`, data);
+    return response.data;
+  },
+};
+
+// ============================================
+// WALLET API
+// ============================================
+export const walletAPI = {
+  getBalance: async (userId: string) => {
+    const response = await apiClient.get(`/wallet/${userId}/balance`);
+    return response.data;
+  },
+
+  addFunds: async (userId: string, amount: number) => {
+    const response = await apiClient.post(`/wallet/${userId}/add`, { amount });
+    return response.data;
+  },
+
+  getTransactions: async (userId: string) => {
+    const response = await apiClient.get(`/wallet/${userId}/transactions`);
+    return response.data;
+  },
+};
+
+// ============================================
+// NOTIFICATIONS API
+// ============================================
+export const notificationsAPI = {
+  registerDevice: async (userId: string, deviceToken: string) => {
+    const response = await apiClient.post('/notifications/register', {
+      userId,
+      deviceToken,
+    });
+    return response.data;
+  },
+
+  getNotifications: async (userId: string) => {
+    const response = await apiClient.get(`/notifications/${userId}`);
+    return response.data;
+  },
+
+  markAsRead: async (notificationId: string) => {
+    const response = await apiClient.put(
+      `/notifications/${notificationId}/read`
+    );
+    return response.data;
+  },
+};
+
+export default apiClient;
+</file>
+
+<file path="src/store/useStore.ts">
+import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Types
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  profileImage?: string;
+  address?: string;
+  createdAt: string;
+}
+
+interface Event {
+  id: string;
+  name: string;
+  date: string;
+  location: string;
+  category: string;
+  description: string;
+  coverImage: string;
+  price: number;
+  capacity: number;
+  status: 'active' | 'sold_out' | 'cancelled';
+}
+
+interface Booking {
+  id: string;
+  eventId: string;
+  eventName: string;
+  userId: string;
+  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
+  amountDue: number;
+  amountPaid: number;
+  qrCode?: string;
+  bookingDate: string;
+  isGroupBooking: boolean;
+  splitWith?: string;
+}
+
+interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  read: boolean;
+  createdAt: string;
+}
+
+interface AppState {
+  // Auth State
+  isAuthenticated: boolean;
+  user: User | null;
+  authToken: string | null;
+  
+  // Events State
+  events: Event[];
+  favoriteEvents: string[];
+  
+  // Bookings State
+  bookings: Booking[];
+  currentBooking: Booking | null;
+  
+  // Notifications State
+  notifications: Notification[];
+  unreadCount: number;
+  
+  // UI State
+  isLoading: boolean;
+  error: string | null;
+  
+  // Queue State
+  queuePosition: number | null;
+  inQueue: boolean;
+  
+  // Wallet State
+  walletBalance: number;
+  
+  // Actions
+  // Auth Actions
+  login: (user: User, token: string) => void;
+  logout: () => void;
+  updateUser: (user: Partial<User>) => void;
+  
+  // Events Actions
+  setEvents: (events: Event[]) => void;
+  addFavoriteEvent: (eventId: string) => void;
+  removeFavoriteEvent: (eventId: string) => void;
+  
+  // Bookings Actions
+  setBookings: (bookings: Booking[]) => void;
+  addBooking: (booking: Booking) => void;
+  updateBooking: (bookingId: string, updates: Partial<Booking>) => void;
+  setCurrentBooking: (booking: Booking | null) => void;
+  
+  // Notifications Actions
+  addNotification: (notification: Notification) => void;
+  markNotificationAsRead: (notificationId: string) => void;
+  markAllNotificationsAsRead: () => void;
+  clearNotifications: () => void;
+  
+  // Queue Actions
+  joinQueue: (position: number) => void;
+  leaveQueue: () => void;
+  updateQueuePosition: (position: number) => void;
+  
+  // Wallet Actions
+  updateWalletBalance: (amount: number) => void;
+  addToWallet: (amount: number) => void;
+  deductFromWallet: (amount: number) => void;
+  
+  // UI Actions
+  setLoading: (loading: boolean) => void;
+  setError: (error: string | null) => void;
+  clearError: () => void;
+}
+
+export const useStore = create<AppState>()(
+  persist(
+    (set, get) => ({
+      // Initial State
+      isAuthenticated: false,
+      user: null,
+      authToken: null,
+      events: [],
+      favoriteEvents: [],
+      bookings: [],
+      currentBooking: null,
+      notifications: [],
+      unreadCount: 0,
+      isLoading: false,
+      error: null,
+      queuePosition: null,
+      inQueue: false,
+      walletBalance: 0,
+
+      // Auth Actions
+      login: (user, token) =>
+        set({
+          isAuthenticated: true,
+          user,
+          authToken: token,
+        }),
+
+      logout: () =>
+        set({
+          isAuthenticated: false,
+          user: null,
+          authToken: null,
+          bookings: [],
+          currentBooking: null,
+          queuePosition: null,
+          inQueue: false,
+        }),
+
+      updateUser: (userData) =>
+        set((state) => ({
+          user: state.user ? { ...state.user, ...userData } : null,
+        })),
+
+      // Events Actions
+      setEvents: (events) => set({ events }),
+
+      addFavoriteEvent: (eventId) =>
+        set((state) => ({
+          favoriteEvents: [...state.favoriteEvents, eventId],
+        })),
+
+      removeFavoriteEvent: (eventId) =>
+        set((state) => ({
+          favoriteEvents: state.favoriteEvents.filter((id) => id !== eventId),
+        })),
+
+      // Bookings Actions
+      setBookings: (bookings) => set({ bookings }),
+
+      addBooking: (booking) =>
+        set((state) => ({
+          bookings: [...state.bookings, booking],
+        })),
+
+      updateBooking: (bookingId, updates) =>
+        set((state) => ({
+          bookings: state.bookings.map((booking) =>
+            booking.id === bookingId ? { ...booking, ...updates } : booking
+          ),
+        })),
+
+      setCurrentBooking: (booking) => set({ currentBooking: booking }),
+
+      // Notifications Actions
+      addNotification: (notification) =>
+        set((state) => ({
+          notifications: [notification, ...state.notifications],
+          unreadCount: state.unreadCount + 1,
+        })),
+
+      markNotificationAsRead: (notificationId) =>
+        set((state) => ({
+          notifications: state.notifications.map((notif) =>
+            notif.id === notificationId ? { ...notif, read: true } : notif
+          ),
+          unreadCount: Math.max(0, state.unreadCount - 1),
+        })),
+
+      markAllNotificationsAsRead: () =>
+        set((state) => ({
+          notifications: state.notifications.map((notif) => ({
+            ...notif,
+            read: true,
+          })),
+          unreadCount: 0,
+        })),
+
+      clearNotifications: () =>
+        set({
+          notifications: [],
+          unreadCount: 0,
+        }),
+
+      // Queue Actions
+      joinQueue: (position) =>
+        set({
+          inQueue: true,
+          queuePosition: position,
+        }),
+
+      leaveQueue: () =>
+        set({
+          inQueue: false,
+          queuePosition: null,
+        }),
+
+      updateQueuePosition: (position) =>
+        set({
+          queuePosition: position,
+        }),
+
+      // Wallet Actions
+      updateWalletBalance: (amount) => set({ walletBalance: amount }),
+
+      addToWallet: (amount) =>
+        set((state) => ({
+          walletBalance: state.walletBalance + amount,
+        })),
+
+      deductFromWallet: (amount) =>
+        set((state) => ({
+          walletBalance: Math.max(0, state.walletBalance - amount),
+        })),
+
+      // UI Actions
+      setLoading: (loading) => set({ isLoading: loading }),
+
+      setError: (error) => set({ error }),
+
+      clearError: () => set({ error: null }),
+    }),
+    {
+      name: 'clubsync-storage',
+      storage: createJSONStorage(() => AsyncStorage),
+      
+      // Only persist specific fields
+      partialize: (state) => ({
+        isAuthenticated: Boolean(state.isAuthenticated), // Convert to boolean
+        user: state.user,
+        authToken: state.authToken,
+        favoriteEvents: state.favoriteEvents,
+        walletBalance: state.walletBalance,
+      }),
+      
+      // Version for migration (increment this if you change the store structure)
+      version: 2, // Increment version to trigger migration
+      
+      // Migration function to handle type conversions
+      migrate: (persistedState: any, version: number) => {
+        // If coming from old version, ensure proper types
+        if (version < 2) {
+          return {
+            isAuthenticated: Boolean(persistedState?.isAuthenticated),
+            user: persistedState?.user || null,
+            authToken: persistedState?.authToken || null,
+            favoriteEvents: persistedState?.favoriteEvents || [],
+            walletBalance: Number(persistedState?.walletBalance) || 0,
+          };
+        }
+        
+        // Ensure all values are correct types even for current version
+        return {
+          ...persistedState,
+          isAuthenticated: Boolean(persistedState?.isAuthenticated),
+          walletBalance: Number(persistedState?.walletBalance) || 0,
+        };
+      },
+      
+      // Add onRehydrateStorage to ensure proper type conversion on load
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          // Force correct types after rehydration
+          state.isAuthenticated = Boolean(state.isAuthenticated);
+          state.inQueue = Boolean(state.inQueue);
+          state.walletBalance = Number(state.walletBalance) || 0;
+        }
+      },
+    }
+  )
+);
+</file>
+
+<file path=".gitignore">
+# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+
+# dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# local env files
+.env*.local
+
+# typescript
+*.tsbuildinfo
+
+# generated native folders
+/ios
+/android
+</file>
+
+<file path="app.json">
+{
+  "expo": {
+    "name": "clubsync-new",
+    "slug": "clubsync-new",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}
+</file>
+
+<file path="index.ts">
+import { registerRootComponent } from 'expo';
+
+import App from './App';
+
+// registerRootComponent calls AppRegistry.registerComponent('main', () => App);
+// It also ensures that whether you load the app in Expo Go or in a native build,
+// the environment is set up appropriately
+registerRootComponent(App);
+</file>
+
+<file path="src/navigation/AppNavigator.tsx">
+import React from 'react';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { NavigationContainer } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import { StyleSheet } from 'react-native';
+import { useStore } from '../store/useStore';
+
+// Auth screens
+import LoginScreen from '../screens/auth/LoginScreen';
+import SignUpScreen from '../screens/auth/SignUpScreen';
+import OnboardingScreen from '../screens/auth/OnboardingScreen';
+
+// Main screens
+import HomeScreen from '../screens/main/HomeScreen';
+import DiscoverScreen from '../screens/main/DiscoverScreen';
+import BookingsScreen from '../screens/main/BookingsScreen';
+import ProfileScreen from '../screens/main/ProfileScreen';
+
+// Event screens
+import EventDetailsScreen from '../screens/events/EventDetailsScreen';
+
+// Booking screens
+import BookingFlowScreen from '../screens/bookings/BookingFlowScreen';
+import GroupBookingScreen from '../screens/bookings/GroupBookingScreen';
+
+// Apartment screens - NEW
+import ApartmentListScreen from '../screens/apartments/ApartmentListScreen';
+import ApartmentDetailsScreen from '../screens/apartments/ApartmentDetailsScreen';
+import ApartmentBookingScreen from '../screens/apartments/ApartmentBookingScreen';
+
+// Car rental screens - NEW
+import CarListScreen from '../screens/cars/CarListScreen';
+import CarDetailsScreen from '../screens/cars/CarDetailsScreen';
+import CarBookingScreen from '../screens/cars/CarBookingScreen';
+
+// Other screens
+import PaymentScreen from '../screens/payments/PaymentScreen';
+import TicketScreen from '../screens/tickets/TicketScreen';
+import QueueScreen from '../screens/queue/QueueScreen';
+import SettingsScreen from '../screens/settings/SettingsScreen';
+import EmergencySOSScreen from '../screens/safety/EmergencySOSScreen';
+import WalletScreen from '../screens/wallet/WalletScreen';
+
+const Stack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator();
+
+// Auth Stack
+function AuthStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="SignUp" component={SignUpScreen} />
+    </Stack.Navigator>
+  );
+}
+
+// Home Tab Stack
+function HomeStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="HomeMain" component={HomeScreen} />
+      <Stack.Screen name="EventDetails" component={EventDetailsScreen} />
+      <Stack.Screen name="ApartmentDetails" component={ApartmentDetailsScreen} />
+      <Stack.Screen name="CarDetails" component={CarDetailsScreen} />
+      <Stack.Screen name="BookingFlow" component={BookingFlowScreen} />
+      <Stack.Screen name="GroupBooking" component={GroupBookingScreen} />
+      <Stack.Screen name="Payment" component={PaymentScreen} />
+      <Stack.Screen name="Ticket" component={TicketScreen} />
+    </Stack.Navigator>
+  );
+}
+
+// Discover Tab Stack (Now includes Apartments & Cars)
+function DiscoverStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="DiscoverMain" component={DiscoverScreen} />
+      <Stack.Screen name="EventDetails" component={EventDetailsScreen} />
+      <Stack.Screen name="ApartmentList" component={ApartmentListScreen} />
+      <Stack.Screen name="ApartmentDetails" component={ApartmentDetailsScreen} />
+      <Stack.Screen name="ApartmentBooking" component={ApartmentBookingScreen} />
+      <Stack.Screen name="CarList" component={CarListScreen} />
+      <Stack.Screen name="CarDetails" component={CarDetailsScreen} />
+      <Stack.Screen name="CarBooking" component={CarBookingScreen} />
+      <Stack.Screen name="BookingFlow" component={BookingFlowScreen} />
+      <Stack.Screen name="Queue" component={QueueScreen} />
+    </Stack.Navigator>
+  );
+}
+
+// Bookings Tab Stack
+function BookingsStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="BookingsMain" component={BookingsScreen} />
+      <Stack.Screen name="Ticket" component={TicketScreen} />
+      <Stack.Screen name="GroupBooking" component={GroupBookingScreen} />
+      <Stack.Screen name="EventDetails" component={EventDetailsScreen} />
+      <Stack.Screen name="ApartmentDetails" component={ApartmentDetailsScreen} />
+      <Stack.Screen name="CarDetails" component={CarDetailsScreen} />
+    </Stack.Navigator>
+  );
+}
+
+// Profile Tab Stack (VIP Dashboard removed)
+function ProfileStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="ProfileMain" component={ProfileScreen} />
+      <Stack.Screen name="Settings" component={SettingsScreen} />
+      <Stack.Screen name="Wallet" component={WalletScreen} />
+      <Stack.Screen name="EmergencySOS" component={EmergencySOSScreen} />
+    </Stack.Navigator>
+  );
+}
+
+// Main Tab Navigator
+function MainTabs() {
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarStyle: styles.tabBar,
+        tabBarActiveTintColor: '#f5dd4b',
+        tabBarInactiveTintColor: '#888',
+        tabBarShowLabel: true,
+        tabBarLabelStyle: styles.tabLabel,
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName: keyof typeof Ionicons.glyphMap = 'home';
+
+          if (route.name === 'Home') {
+            iconName = focused ? 'home' : 'home-outline';
+          } else if (route.name === 'Discover') {
+            iconName = focused ? 'compass' : 'compass-outline';
+          } else if (route.name === 'Bookings') {
+            iconName = focused ? 'calendar' : 'calendar-outline';
+          } else if (route.name === 'Profile') {
+            iconName = focused ? 'person' : 'person-outline';
+          }
+
+          return <Ionicons name={iconName} size={size} color={color} />;
+        },
+      })}
+    >
+      <Tab.Screen name="Home" component={HomeStack} />
+      <Tab.Screen name="Discover" component={DiscoverStack} />
+      <Tab.Screen name="Bookings" component={BookingsStack} />
+      <Tab.Screen name="Profile" component={ProfileStack} />
+    </Tab.Navigator>
+  );
+}
+
+// Root Navigator
+export default function AppNavigator() {
+  const isAuthenticated = useStore((state) => Boolean(state.isAuthenticated));
+
+  return (
+    <NavigationContainer>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        {!isAuthenticated ? (
+          <Stack.Screen name="Auth" component={AuthStack} />
+        ) : (
+          <Stack.Screen name="Main" component={MainTabs} />
+        )}
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+}
+
+const styles = StyleSheet.create({
+  tabBar: {
+    backgroundColor: '#1a1a1a',
+    borderTopColor: '#333',
+    borderTopWidth: 1,
+    height: 60,
+    paddingBottom: 8,
+    paddingTop: 8,
+  },
+  tabLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+});
+</file>
+
+<file path="App.tsx">
+import { useEffect, useState } from "react";
+import { StatusBar } from 'react-native';
+import * as SplashScreen from 'expo-splash-screen';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import AppNavigator from './src/navigation/AppNavigator';
+import React from "react";
+
+SplashScreen.preventAutoHideAsync();
+
+export default function App() {
+  const [appIsReady, setAppIsReady] = useState(!!false);
+
+  useEffect(() => {
+    async function prepare() {
+      try {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      } catch (e) {
+        console.warn(e);
+      } finally {
+        setAppIsReady(true);
+        await SplashScreen.hideAsync();
+      }
+    }
+    prepare();
+  }, []);
+
+  if (!appIsReady) {
+    return null;
+  }
+
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <StatusBar barStyle="light-content" backgroundColor="#000" />
+      <AppNavigator />
+    </GestureHandlerRootView>
+  );
+}
+</file>
+
+<file path="tsconfig.json">
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "jsx": "react",
+    "strict": true
+  }
+}
+</file>
+
+<file path="package.json">
+{
+  "name": "clubsync-new",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web"
+  },
+  "dependencies": {
+    "@expo/vector-icons": "^15.0.3",
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "@react-navigation/bottom-tabs": "^7.9.0",
+    "@react-navigation/native": "^7.1.26",
+    "@react-navigation/native-stack": "^7.9.0",
+    "axios": "^1.13.2",
+    "expo": "~54.0.30",
+    "expo-linear-gradient": "~15.0.8",
+    "expo-splash-screen": "~31.0.13",
+    "expo-status-bar": "~3.0.9",
+    "react": "19.1.0",
+    "react-native": "0.81.5",
+    "react-native-gesture-handler": "~2.28.0",
+    "react-native-safe-area-context": "~5.6.0",
+    "react-native-screens": "~4.16.0",
+    "react-native-svg": "15.12.1",
+    "zustand": "^5.0.9"
+  },
+  "devDependencies": {
+    "@types/react": "~19.1.0",
+    "typescript": "~5.9.2"
+  },
+  "private": true
+}
+</file>
+
+</files>

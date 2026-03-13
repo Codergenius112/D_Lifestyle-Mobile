@@ -1,19 +1,20 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react';
 import { StatusBar } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AppNavigator from './src/navigation/AppNavigator';
-import React from "react";
 
 SplashScreen.preventAutoHideAsync();
 
 export default function App() {
-  const [appIsReady, setAppIsReady] = useState(!!false);
+  const [appIsReady, setAppIsReady] = useState(false);
 
   useEffect(() => {
     async function prepare() {
       try {
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // Minimum splash duration — replace with actual asset loading if needed
+        await new Promise((resolve) => setTimeout(resolve, 1500));
       } catch (e) {
         console.warn(e);
       } finally {
@@ -24,14 +25,15 @@ export default function App() {
     prepare();
   }, []);
 
-  if (!appIsReady) {
-    return null;
-  }
+  if (!appIsReady) return null;
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <StatusBar barStyle="light-content" backgroundColor="#000" />
-      <AppNavigator />
-    </GestureHandlerRootView>
+    // SafeAreaProvider required for react-native-safe-area-context used in screens
+    <SafeAreaProvider>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <StatusBar barStyle="light-content" backgroundColor="#000" />
+        <AppNavigator />
+      </GestureHandlerRootView>
+    </SafeAreaProvider>
   );
 }

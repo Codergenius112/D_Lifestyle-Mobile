@@ -7,20 +7,19 @@ export default function SettingsScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       <StarlightBackground />
-      
-      <TouchableOpacity 
-        style={styles.backButton}
-        onPress={() => navigation.goBack()}
-      >
+
+      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
         <Ionicons name="arrow-back" size={24} color="#fff" />
       </TouchableOpacity>
 
       <View style={styles.content}>
-        <Ionicons name="settings-outline" size={64} color="#f5dd4b" />
+        <View style={styles.iconWrap}>
+          <Ionicons name="settings-outline" size={64} color="#f5dd4b" />
+        </View>
         <Text style={styles.title}>Settings</Text>
-        <Text style={styles.subtitle}>Coming Soon...</Text>
+        <Text style={styles.subtitle}>Coming Soon</Text>
         <Text style={styles.description}>
-          Manage app preferences and account settings
+          Manage app preferences, notifications, and account settings
         </Text>
       </View>
     </View>
@@ -28,43 +27,19 @@ export default function SettingsScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000',
-  },
+  container: { flex: 1, backgroundColor: '#000' },
   backButton: {
-    position: 'absolute',
-    top: 50,
-    left: 20,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 10,
+    position: 'absolute', top: 54, left: 20, zIndex: 10,
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center',
   },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
+  content: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
+  iconWrap: {
+    width: 100, height: 100, borderRadius: 50,
+    backgroundColor: 'rgba(245,221,75,0.1)',
+    justifyContent: 'center', alignItems: 'center', marginBottom: 24,
   },
-  title: {
-    color: '#fff',
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginTop: 20,
-    marginBottom: 8,
-  },
-  subtitle: {
-    color: '#f5dd4b',
-    fontSize: 18,
-    marginBottom: 8,
-  },
-  description: {
-    color: '#888',
-    fontSize: 14,
-    textAlign: 'center',
-  },
+  title: { color: '#fff', fontSize: 24, fontWeight: 'bold', marginBottom: 8 },
+  subtitle: { color: '#f5dd4b', fontSize: 18, marginBottom: 12 },
+  description: { color: '#888', fontSize: 14, textAlign: 'center', lineHeight: 22 },
 });

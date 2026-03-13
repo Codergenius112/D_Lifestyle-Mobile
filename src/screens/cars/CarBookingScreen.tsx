@@ -1,70 +1,290 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+/**
+ * CarBookingScreen
+ * Route: CarBooking
+ * Params: { carId, carName, pricePerDay }
+ *
+ * Lets the user pick pickup/return dates and enter driver license.
+ * On confirm → POST /cars → navigate to Payment { bookingId, totalAmount, bookingType }
+ *
+ * Business rules:
+ *  - totalAmount = (pricePerDay × days) + ₦400 service charge
+ *  - cautionFee = 20% of basePrice (backend-calculated, shown for info only)
+ *  - Platform commission (3%) is venue-paid, never shown to user
+ */
+import React, { useState } from 'react';
+import {
+  View, Text, StyleSheet, ScrollView, TouchableOpacity,
+  TextInput, Alert, ActivityIndicator, StatusBar,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import StarlightBackground from '../../components/StarlightBackground';
+import { useStore } from '../../store/useStore';
+import { carsAPI, SERVICE_CHARGE } from '../../services/api';
 
-export default function CarBookingScreen({ navigation }: any) {
+export default function CarBookingScreen({ route, navigation }: any) {
+  const { carId, carName, pricePerDay } = route.params || {};
+  const addBooking = useStore((state) => state.addBooking);
+
+  const [pickupDate, setPickupDate] = useState('');
+  const [returnDate, setReturnDate] = useState('');
+  const [driverLicense, setDriverLicense] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  // ── Date helpers ────────────────────────────────────────────────────────────
+  const parseDate = (s: string): Date | null => {
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? null : d;
+  };
+
+  const calcDays = (): number => {
+    const d1 = parseDate(pickupDate);
+    const d2 = parseDate(returnDate);
+    if (!d1 || !d2) return 0;
+    return Math.max(0, Math.ceil((d2.getTime() - d1.getTime()) / 86400000));
+  };
+
+  const formatDisplayDate = (s: string): string => {
+    const d = parseDate(s);
+    if (!d) return s;
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  };
+
+  const days = calcDays();
+  const basePrice = (pricePerDay || 0) * days;
+  const serviceCharge = SERVICE_CHARGE; // ₦400
+  const totalAmount = basePrice + serviceCharge;
+  const cautionFee = Math.ceil(basePrice * 0.2); // 20% — backend-calculated, shown for info
+
+  // ── Submit ──────────────────────────────────────────────────────────────────
+  const handleBook = async () => {
+    if (!pickupDate.trim() || !returnDate.trim()) {
+      Alert.alert('Missing Dates', 'Please enter both pickup and return dates.');
+      return;
+    }
+    if (!parseDate(pickupDate) || !parseDate(returnDate)) {
+      Alert.alert('Invalid Dates', 'Please enter dates in YYYY-MM-DD format.');
+      return;
+    }
+    if (days <= 0) {
+      Alert.alert('Invalid Dates', 'Return date must be after pickup date.');
+      return;
+    }
+    if (!driverLicense.trim()) {
+      Alert.alert('Driver License Required', 'Please enter your driver license number.');
+      return;
+    }
+    if (!carId) {
+      Alert.alert('Error', 'No car selected. Please go back and try again.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      // POST /cars
+      const booking = await carsAPI.rentCar({
+        carId,
+        pickupDate: new Date(pickupDate).toISOString(),
+        returnDate: new Date(returnDate).toISOString(),
+        price: basePrice,
+        driverLicense: driverLicense.trim(),
+      });
+      addBooking(booking);
+      navigation.navigate('Payment', {
+        bookingId: booking.id,
+        totalAmount: booking.totalAmount,
+        bookingType: 'car',
+      });
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || 'Booking failed. Please try again.';
+      Alert.alert('Booking Failed', msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <View style={styles.container}>
+    <View style={s.container}>
       <StarlightBackground />
-      
-      <TouchableOpacity 
-        style={styles.backButton}
-        onPress={() => navigation.goBack()}
-      >
+      <StatusBar barStyle="light-content" />
+
+      <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>
         <Ionicons name="arrow-back" size={24} color="#fff" />
       </TouchableOpacity>
 
-      <View style={styles.content}>
-        <Ionicons name="calendar-outline" size={64} color="#f5dd4b" />
-        <Text style={styles.title}>Car Booking</Text>
-        <Text style={styles.subtitle}>Coming Soon...</Text>
-        <Text style={styles.description}>
-          Select pickup/return dates and complete your rental
-        </Text>
-      </View>
+      <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
+        <Text style={s.title}>Rent a Car</Text>
+        {carName ? <Text style={s.subtitle}>{carName}</Text> : null}
+
+        {/* Pickup date */}
+        <View style={s.section}>
+          <Text style={s.label}>Pickup Date</Text>
+          <View style={s.inputWrap}>
+            <Ionicons name="calendar-outline" size={20} color="#888" style={s.inputIcon} />
+            <TextInput
+              style={s.input}
+              placeholder="YYYY-MM-DD"
+              placeholderTextColor="#555"
+              value={pickupDate}
+              onChangeText={setPickupDate}
+              maxLength={10}
+            />
+          </View>
+          {pickupDate.length === 10 && (
+            <Text style={s.datePreview}>{formatDisplayDate(pickupDate)}</Text>
+          )}
+        </View>
+
+        {/* Return date */}
+        <View style={s.section}>
+          <Text style={s.label}>Return Date</Text>
+          <View style={s.inputWrap}>
+            <Ionicons name="calendar-outline" size={20} color="#888" style={s.inputIcon} />
+            <TextInput
+              style={s.input}
+              placeholder="YYYY-MM-DD"
+              placeholderTextColor="#555"
+              value={returnDate}
+              onChangeText={setReturnDate}
+              maxLength={10}
+            />
+          </View>
+          {returnDate.length === 10 && (
+            <Text style={s.datePreview}>{formatDisplayDate(returnDate)}</Text>
+          )}
+        </View>
+
+        {/* Driver license */}
+        <View style={s.section}>
+          <Text style={s.label}>Driver License Number</Text>
+          <View style={s.inputWrap}>
+            <Ionicons name="card-outline" size={20} color="#888" style={s.inputIcon} />
+            <TextInput
+              style={s.input}
+              placeholder="e.g. ABC-1234-XYZ"
+              placeholderTextColor="#555"
+              value={driverLicense}
+              onChangeText={setDriverLicense}
+              autoCapitalize="characters"
+            />
+          </View>
+        </View>
+
+        {/* Duration badge */}
+        {days > 0 && (
+          <View style={s.daysBadge}>
+            <Ionicons name="time-outline" size={16} color="#f5dd4b" />
+            <Text style={s.daysText}>{days} day{days !== 1 ? 's' : ''}</Text>
+          </View>
+        )}
+
+        {/* Price summary */}
+        {days > 0 && basePrice > 0 && (
+          <View style={s.priceCard}>
+            <Text style={s.priceCardTitle}>Price Summary</Text>
+            <PriceRow
+              label={`₦${(pricePerDay || 0).toLocaleString()} × ${days} day${days !== 1 ? 's' : ''}`}
+              value={`₦${basePrice.toLocaleString()}`}
+            />
+            <PriceRow label="Service charge" value={`₦${serviceCharge.toLocaleString()}`}
+              note="Non-refundable" />
+            <View style={s.divider} />
+            <PriceRow label="Total" value={`₦${totalAmount.toLocaleString()}`} highlight />
+
+            <View style={s.cautionNotice}>
+              <Ionicons name="information-circle-outline" size={16} color="#888" />
+              <Text style={s.cautionText}>
+                A refundable caution fee of ₦{cautionFee.toLocaleString()} (20%) is also
+                collected separately by the rental provider.
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {/* CTA */}
+        <TouchableOpacity
+          style={[s.bookBtn, (loading || days <= 0) && { opacity: 0.5 }]}
+          onPress={handleBook}
+          disabled={loading || days <= 0}
+          activeOpacity={0.85}>
+          <LinearGradient colors={['#f5dd4b', '#d4a017']} style={s.bookGradient}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+            {loading
+              ? <ActivityIndicator color="#111" />
+              : <Text style={s.bookBtnText}>
+                  {days > 0
+                    ? `Confirm & Pay ₦${totalAmount.toLocaleString()}`
+                    : 'Enter Dates to Continue'}
+                </Text>
+            }
+          </LinearGradient>
+        </TouchableOpacity>
+
+        <View style={{ height: 40 }} />
+      </ScrollView>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000',
+function PriceRow({ label, value, note, highlight }: {
+  label: string; value: string; note?: string; highlight?: boolean;
+}) {
+  return (
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between',
+      alignItems: 'flex-start', marginBottom: 12 }}>
+      <View style={{ flex: 1 }}>
+        <Text style={{ color: '#888', fontSize: 14 }}>{label}</Text>
+        {note && <Text style={{ color: '#555', fontSize: 11, marginTop: 2 }}>{note}</Text>}
+      </View>
+      <Text style={{
+        color: highlight ? '#f5dd4b' : '#fff',
+        fontSize: highlight ? 20 : 14,
+        fontWeight: highlight ? 'bold' : '600',
+      }}>{value}</Text>
+    </View>
+  );
+}
+
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#000' },
+  backBtn: {
+    position: 'absolute', top: 54, left: 20, zIndex: 10,
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center',
   },
-  backButton: {
-    position: 'absolute',
-    top: 50,
-    left: 20,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 10,
+  content: { padding: 20, paddingTop: 110 },
+  title: { fontSize: 28, fontWeight: 'bold', color: '#fff', marginBottom: 4 },
+  subtitle: { fontSize: 15, color: '#888', marginBottom: 32 },
+  section: { marginBottom: 20 },
+  label: { color: '#888', fontSize: 13, fontWeight: '600', marginBottom: 8 },
+  inputWrap: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.07)', borderRadius: 12,
+    paddingHorizontal: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
   },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
+  inputIcon: { marginRight: 12 },
+  input: { flex: 1, color: '#fff', fontSize: 16, paddingVertical: 16 },
+  datePreview: { color: '#f5dd4b', fontSize: 12, marginTop: 6, marginLeft: 4 },
+  daysBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: 'rgba(245,221,75,0.1)', alignSelf: 'flex-start',
+    paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20,
+    borderWidth: 1, borderColor: 'rgba(245,221,75,0.3)', marginBottom: 24,
   },
-  title: {
-    color: '#fff',
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginTop: 20,
-    marginBottom: 8,
+  daysText: { color: '#f5dd4b', fontSize: 14, fontWeight: '700' },
+  priceCard: {
+    backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 16,
+    padding: 20, marginBottom: 24,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
   },
-  subtitle: {
-    color: '#f5dd4b',
-    fontSize: 18,
-    marginBottom: 8,
+  priceCardTitle: { color: '#fff', fontSize: 16, fontWeight: '600', marginBottom: 16 },
+  divider: { height: 1, backgroundColor: 'rgba(255,255,255,0.1)', marginBottom: 12 },
+  cautionNotice: {
+    flexDirection: 'row', alignItems: 'flex-start',
+    backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: 12, marginTop: 4,
   },
-  description: {
-    color: '#888',
-    fontSize: 14,
-    textAlign: 'center',
-  },
+  cautionText: { color: '#666', fontSize: 12, marginLeft: 8, flex: 1, lineHeight: 18 },
+  bookBtn: { borderRadius: 14, overflow: 'hidden' },
+  bookGradient: { paddingVertical: 18, alignItems: 'center' },
+  bookBtnText: { color: '#000', fontSize: 17, fontWeight: 'bold' },
 });
