@@ -14,26 +14,21 @@ const { width, height } = Dimensions.get('window');
 
 export default function EventDetailsScreen({ route, navigation }: any) {
   const { eventId } = route.params;
-  const favoriteEvents = useStore((state) => state.favoriteEvents);
-  const addFavoriteEvent = useStore((state) => state.addFavoriteEvent);
+  const favoriteEvents      = useStore((state) => state.favoriteEvents);
+  const addFavoriteEvent    = useStore((state) => state.addFavoriteEvent);
   const removeFavoriteEvent = useStore((state) => state.removeFavoriteEvent);
 
-  const [event, setEvent] = useState<BackendEvent | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [event, setEvent]         = useState<BackendEvent | null>(null);
+  const [loading, setLoading]     = useState(true);
   const [activeTab, setActiveTab] = useState<'about' | 'lineup'>('about');
 
   const isFavorite = favoriteEvents.includes(eventId);
 
-  useEffect(() => {
-    fetchEvent();
-  }, [eventId]);
+  useEffect(() => { fetchEvent(); }, [eventId]);
 
   const fetchEvent = async () => {
     try {
       setLoading(true);
-      // GET /events/:id — only endpoint that exists for event details
-      // NOTE: /events/:id/menu and /events/:id/ambience do NOT exist on the backend.
-      // Menu belongs to the orders module; ambience/gallery is not yet implemented.
       const data = await eventsAPI.getEventById(eventId);
       setEvent(data);
     } catch (error) {
@@ -44,11 +39,8 @@ export default function EventDetailsScreen({ route, navigation }: any) {
   };
 
   const toggleFavorite = () => {
-    if (isFavorite) {
-      removeFavoriteEvent(eventId);
-    } else {
-      addFavoriteEvent(eventId);
-    }
+    if (isFavorite) removeFavoriteEvent(eventId);
+    else addFavoriteEvent(eventId);
   };
 
   const shareEvent = async () => {
@@ -80,7 +72,6 @@ export default function EventDetailsScreen({ route, navigation }: any) {
     <View style={styles.tabContent}>
       <Text style={styles.description}>{event?.description || 'No description available.'}</Text>
 
-      {/* Info Grid */}
       <View style={styles.infoGrid}>
         <View style={styles.infoCard}>
           <Ionicons name="calendar" size={24} color="#f5dd4b" />
@@ -92,9 +83,7 @@ export default function EventDetailsScreen({ route, navigation }: any) {
         <View style={styles.infoCard}>
           <Ionicons name="time" size={24} color="#f5dd4b" />
           <Text style={styles.infoLabel}>Time</Text>
-          <Text style={styles.infoValue}>
-            {formatTime(event?.startDate || '')}
-          </Text>
+          <Text style={styles.infoValue}>{formatTime(event?.startDate || '')}</Text>
         </View>
       </View>
 
@@ -113,7 +102,6 @@ export default function EventDetailsScreen({ route, navigation }: any) {
         </View>
       )}
 
-      {/* Genre */}
       {event?.genre && (
         <View style={styles.genreContainer}>
           <Text style={styles.sectionTitle}>Genre</Text>
@@ -124,7 +112,6 @@ export default function EventDetailsScreen({ route, navigation }: any) {
         </View>
       )}
 
-      {/* Booking notice */}
       <View style={styles.noticeCard}>
         <Ionicons name="information-circle" size={16} color="#00bcd4" />
         <Text style={styles.noticeText}>
@@ -190,18 +177,17 @@ export default function EventDetailsScreen({ route, navigation }: any) {
       <StatusBar barStyle="light-content" />
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Hero section (no image — backend doesn't store coverImage yet) */}
+
+        {/* Hero */}
         <LinearGradient
           colors={['#1a1500', '#2a2000', '#000']}
           style={styles.heroContainer}
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
         >
-          {/* Back Button */}
           <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
             <Ionicons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
 
-          {/* Action Buttons */}
           <View style={styles.actionButtons}>
             <TouchableOpacity style={styles.actionButton} onPress={shareEvent}>
               <Ionicons name="share-outline" size={24} color="#fff" />
@@ -215,12 +201,10 @@ export default function EventDetailsScreen({ route, navigation }: any) {
             </TouchableOpacity>
           </View>
 
-          {/* Event Icon */}
           <View style={styles.eventIconContainer}>
             <Ionicons name="musical-notes" size={56} color="#f5dd4b" />
           </View>
 
-          {/* Status badge */}
           <View style={[
             styles.statusBadge,
             { backgroundColor: event.status === 'active' ? 'rgba(0,200,81,0.2)' : 'rgba(255,68,68,0.2)' },
@@ -238,7 +222,7 @@ export default function EventDetailsScreen({ route, navigation }: any) {
           </View>
         </LinearGradient>
 
-        {/* Title section */}
+        {/* Title */}
         <View style={styles.titleContainer}>
           {event.genre && (
             <View style={styles.categoryBadge}>
@@ -265,42 +249,58 @@ export default function EventDetailsScreen({ route, navigation }: any) {
           ))}
         </View>
 
-        {activeTab === 'about' && renderAboutTab()}
+        {activeTab === 'about'  && renderAboutTab()}
         {activeTab === 'lineup' && renderLineupTab()}
 
         <View style={{ height: 100 }} />
       </ScrollView>
 
-      {/* Book CTA */}
+      {/* ── Bottom CTA ────────────────────────────────────────────────────── */}
       <View style={styles.bottomContainer}>
-        <TouchableOpacity
-          style={styles.bookButton}
-          onPress={() => navigation.navigate('BookingFlow', { eventId })}
-          activeOpacity={0.8}
-        >
-          <LinearGradient colors={['#f5dd4b', '#d4a017']} style={styles.bookGradient}
-            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
-            <Text style={styles.bookButtonText}>Book Now</Text>
-            <Ionicons name="arrow-forward" size={20} color="#111" />
-          </LinearGradient>
-        </TouchableOpacity>
+        <View style={styles.ctaRow}>
+
+          {/* Tables button — only visible when the event has a venueId */}
+          {event.venueId ? (
+            <TouchableOpacity
+              style={styles.tablesButton}
+              onPress={() => navigation.navigate('TableList', {
+                venueId:   event.venueId,
+                venueName: event.name,
+              })}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="restaurant-outline" size={18} color="#f5dd4b" />
+              <Text style={styles.tablesButtonText}>Tables</Text>
+            </TouchableOpacity>
+          ) : null}
+
+          {/* Book Tickets */}
+          <TouchableOpacity
+            style={[styles.bookButton, !event.venueId && { flex: 1 }]}
+            onPress={() => navigation.navigate('BookingFlow', { eventId })}
+            activeOpacity={0.8}
+          >
+            <LinearGradient colors={['#f5dd4b', '#d4a017']} style={styles.bookGradient}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+              <Text style={styles.bookButtonText}>Book Tickets</Text>
+              <Ionicons name="arrow-forward" size={18} color="#111" />
+            </LinearGradient>
+          </TouchableOpacity>
+
+        </View>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
-  loadingContainer: {
-    flex: 1, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center',
-  },
-  loadingText: { color: '#888', fontSize: 16, marginTop: 16 },
-  backBtn: {
-    marginTop: 24, backgroundColor: '#f5dd4b',
-    paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8,
-  },
-  backBtnText: { color: '#000', fontWeight: 'bold' },
-  scrollView: { flex: 1 },
+  container:        { flex: 1, backgroundColor: '#000' },
+  loadingContainer: { flex: 1, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center' },
+  loadingText:      { color: '#888', fontSize: 16, marginTop: 16 },
+  backBtn:          { marginTop: 24, backgroundColor: '#f5dd4b', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 },
+  backBtnText:      { color: '#000', fontWeight: 'bold' },
+  scrollView:       { flex: 1 },
+
   heroContainer: {
     height: height * 0.28, justifyContent: 'center', alignItems: 'center', position: 'relative',
   },
@@ -310,7 +310,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center',
   },
   actionButtons: { position: 'absolute', top: 54, right: 20, flexDirection: 'row' },
-  actionButton: {
+  actionButton:  {
     width: 40, height: 40, borderRadius: 20,
     backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center',
     marginLeft: 12,
@@ -326,49 +326,54 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20,
   },
-  statusDot: { width: 6, height: 6, borderRadius: 3, marginRight: 6 },
+  statusDot:  { width: 6, height: 6, borderRadius: 3, marginRight: 6 },
   statusText: { fontSize: 10, fontWeight: '700' },
+
   titleContainer: { padding: 20 },
-  categoryBadge: {
+  categoryBadge:  {
     alignSelf: 'flex-start', backgroundColor: 'rgba(245,221,75,0.15)',
     paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, marginBottom: 12,
   },
   categoryText: { color: '#f5dd4b', fontSize: 11, fontWeight: '600' },
-  eventTitle: { color: '#fff', fontSize: 28, fontWeight: 'bold', marginBottom: 10 },
-  dateRow: { flexDirection: 'row', alignItems: 'center' },
-  dateText: { color: '#888', fontSize: 13, marginLeft: 6 },
+  eventTitle:   { color: '#fff', fontSize: 28, fontWeight: 'bold', marginBottom: 10 },
+  dateRow:      { flexDirection: 'row', alignItems: 'center' },
+  dateText:     { color: '#888', fontSize: 13, marginLeft: 6 },
+
   tabs: {
     flexDirection: 'row', borderBottomWidth: 1,
     borderBottomColor: '#222', paddingHorizontal: 20,
   },
-  tab: { paddingVertical: 14, paddingHorizontal: 20, marginRight: 8 },
-  activeTab: { borderBottomWidth: 2, borderBottomColor: '#f5dd4b' },
-  tabText: { color: '#666', fontSize: 15, fontWeight: '600' },
+  tab:           { paddingVertical: 14, paddingHorizontal: 20, marginRight: 8 },
+  activeTab:     { borderBottomWidth: 2, borderBottomColor: '#f5dd4b' },
+  tabText:       { color: '#666', fontSize: 15, fontWeight: '600' },
   activeTabText: { color: '#f5dd4b' },
-  tabContent: { padding: 20 },
+  tabContent:    { padding: 20 },
+
   description: { color: '#ccc', fontSize: 15, lineHeight: 24, marginBottom: 24 },
-  infoGrid: { flexDirection: 'row', marginBottom: 16 },
-  infoCard: {
+  infoGrid:    { flexDirection: 'row', marginBottom: 16 },
+  infoCard:    {
     flex: 1, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12,
     padding: 16, marginRight: 8, alignItems: 'center',
   },
   infoLabel: { color: '#888', fontSize: 11, marginTop: 8 },
   infoValue: { color: '#fff', fontSize: 13, fontWeight: '600', marginTop: 4, textAlign: 'center' },
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#fff', marginBottom: 12 },
+
+  sectionTitle:   { fontSize: 18, fontWeight: 'bold', color: '#fff', marginBottom: 12 },
   genreContainer: { marginBottom: 20 },
-  genreChip: {
+  genreChip:      {
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: 'rgba(245,221,75,0.1)', alignSelf: 'flex-start',
     paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16,
   },
-  genreText: { color: '#f5dd4b', fontSize: 14, fontWeight: '600', marginLeft: 6 },
+  genreText:  { color: '#f5dd4b', fontSize: 14, fontWeight: '600', marginLeft: 6 },
   noticeCard: {
     flexDirection: 'row', alignItems: 'flex-start',
     backgroundColor: 'rgba(0,188,212,0.08)', borderRadius: 10,
     padding: 14, marginTop: 8,
   },
   noticeText: { color: '#888', fontSize: 12, marginLeft: 10, flex: 1, lineHeight: 18 },
-  djCard: {
+
+  djCard:   {
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 16, marginBottom: 10,
   },
@@ -377,21 +382,33 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(245,221,75,0.1)',
     justifyContent: 'center', alignItems: 'center', marginRight: 14,
   },
-  djInfo: { flex: 1 },
-  djName: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  djRole: { color: '#888', fontSize: 12, marginTop: 3 },
+  djInfo:   { flex: 1 },
+  djName:   { color: '#fff', fontSize: 16, fontWeight: '600' },
+  djRole:   { color: '#888', fontSize: 12, marginTop: 3 },
+
   emptyContainer: { alignItems: 'center', paddingVertical: 40 },
-  emptyText: { color: '#fff', fontSize: 16, fontWeight: '600', marginTop: 14 },
-  emptySubtext: { color: '#666', fontSize: 13, marginTop: 6 },
+  emptyText:      { color: '#fff', fontSize: 16, fontWeight: '600', marginTop: 14 },
+  emptySubtext:   { color: '#666', fontSize: 13, marginTop: 6 },
+
+  // Bottom CTA
   bottomContainer: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
-    padding: 20, backgroundColor: 'rgba(0,0,0,0.95)',
+    padding: 20, paddingBottom: 36,
+    backgroundColor: 'rgba(0,0,0,0.97)',
     borderTopWidth: 1, borderTopColor: '#222',
   },
-  bookButton: { borderRadius: 12, overflow: 'hidden' },
-  bookGradient: {
-    flexDirection: 'row', justifyContent: 'center',
-    alignItems: 'center', paddingVertical: 16,
+  ctaRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  tablesButton: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    backgroundColor: 'rgba(245,221,75,0.1)',
+    borderWidth: 1, borderColor: 'rgba(245,221,75,0.3)',
+    paddingHorizontal: 18, paddingVertical: 16, borderRadius: 12,
   },
-  bookButtonText: { color: '#111', fontSize: 18, fontWeight: 'bold', marginRight: 8 },
+  tablesButtonText: { color: '#f5dd4b', fontSize: 14, fontWeight: '700' },
+  bookButton:       { flex: 1, borderRadius: 12, overflow: 'hidden' },
+  bookGradient:     {
+    flexDirection: 'row', justifyContent: 'center',
+    alignItems: 'center', paddingVertical: 16, gap: 8,
+  },
+  bookButtonText: { color: '#111', fontSize: 16, fontWeight: 'bold' },
 });

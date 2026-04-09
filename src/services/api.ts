@@ -379,9 +379,12 @@ export const tablesAPI = {
    * Creates a table booking. userId derived from JWT.
    * totalAmount = price + 400 (service charge)
    */
+  
   bookTable: async (data: {
     venueId: string;
     tableId: string;
+    tableNumber?: string;
+    venueName?: string;
     guestCount: number;
     bookingDate: string;
     price: number;
@@ -629,5 +632,147 @@ export const calculateCheckoutTotal = (basePrice: number) => ({
   platformCommission: basePrice * 0.03,
   venueNet: basePrice - basePrice * 0.03,
 });
+
+// ── MenuItem type ─────────────────────────────────────────────────────────────
+export interface MenuItem {
+  id: string;
+  venueId: string;
+  name: string;
+  description: string;
+  category: 'food' | 'drinks' | 'cocktails' | 'bottles' | 'desserts' | 'extras';
+  price: number;
+  imageUrl?: string;
+  isAvailable: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ── Order types ───────────────────────────────────────────────────────────────
+export interface OrderItem {
+  itemId: string;
+  name: string;
+  quantity: number;
+  price: number;
+  specialInstructions?: string;
+}
+
+export interface Order {
+  id: string;
+  bookingId: string;
+  userId: string;
+  status: 'CREATED' | 'ASSIGNED' | 'ROUTED' | 'IN_PREPARATION' | 'READY' | 'SERVED' | 'COMPLETED' | 'CANCELLED';
+  items: OrderItem[];
+  totalAmount: number;
+  assignedToUserId?: string;
+  routedToStationId?: string;
+  readyAt?: string;
+  servedAt?: string;
+  completedAt?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ── menuAPI ───────────────────────────────────────────────────────────────────
+export const menuAPI = {
+  getMenu: async (venueId: string, category?: string): Promise<{
+    items: MenuItem[];
+    total: number;
+    categories: string[];
+  }> => {
+    const params: any = { venueId };
+    if (category) params.category = category;
+    const response = await apiClient.get('/menu', { params });
+    return response.data;
+  },
+
+  getMenuItem: async (itemId: string): Promise<MenuItem> => {
+    const response = await apiClient.get(`/menu/${itemId}`);
+    return response.data;
+  },
+};
+
+// ── ordersAPI ─────────────────────────────────────────────────────────────────
+export const ordersAPI = {
+  createOrder: async (data: {
+    bookingId: string;
+    items: OrderItem[];
+    notes?: string;
+  }): Promise<Order> => {
+    const response = await apiClient.post('/orders', data);
+    return response.data;
+  },
+
+  getMyOrders: async (params?: { limit?: number; offset?: number }): Promise<{
+    orders: Order[];
+    total: number;
+  }> => {
+    const response = await apiClient.get('/orders/my', { params });
+    return response.data;
+  },
+
+  getOrdersByBooking: async (bookingId: string): Promise<Order[]> => {
+    const response = await apiClient.get(`/orders/booking/${bookingId}`);
+    return response.data;
+  },
+
+  getOrder: async (orderId: string): Promise<Order> => {
+    const response = await apiClient.get(`/orders/${orderId}`);
+    return response.data;
+  },
+
+  updateOrderStatus: async (orderId: string, status: string): Promise<Order> => {
+    const response = await apiClient.patch(`/orders/${orderId}/status`, { status });
+    return response.data;
+  },
+};
+
+// ─── Wallet types ─────────────────────────────────────────────────────────────
+export interface WalletData {
+  id: string;
+  userId: string;
+  balance: number;
+  currency: string;
+  lastTransactionAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LedgerEntry {
+  id: string;
+  transactionType: 'CREDIT' | 'DEBIT';
+  amount: number;
+  description: string;
+  createdAt: string;
+}
+
+// ─── walletAPI ────────────────────────────────────────────────────────────────
+export const walletAPI = {
+  /** GET /wallet — returns wallet with current balance */
+  getWallet: async (): Promise<WalletData> => {
+    const response = await apiClient.get('/wallet');
+    return response.data;
+  },
+
+  /** GET /wallet/transactions — ledger entries newest first */
+  getTransactions: async (): Promise<{ entries: LedgerEntry[]; total: number }> => {
+    const response = await apiClient.get('/wallet/transactions');
+    return response.data;
+  },
+
+  /**
+   * POST /wallet/fund
+   * Call this after Paystack payment succeeds to credit the wallet.
+   */
+  fundWallet: async (amount: number, paystackReference: string): Promise<{
+    success: boolean;
+    balance: number;
+    message: string;
+  }> => {
+    const response = await apiClient.post('/wallet/fund', { amount, paystackReference });
+    return response.data;
+  },
+};
 
 export default apiClient;

@@ -5,9 +5,14 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { PaystackProvider, usePaystack } from 'react-native-paystack-webview';
 import StarlightBackground from '../../components/StarlightBackground';
 import { useStore } from '../../store/useStore';
+import { walletAPI } from '../../services/api';
 import apiClient from '../../services/api';
+
+// ── Replace with your real Paystack public key ────────────────────────────────
+const PAYSTACK_PUBLIC_KEY = 'pk_test_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
 
 interface WalletData {
   id: string;
@@ -24,35 +29,35 @@ interface LedgerEntry {
   createdAt: string;
 }
 
-export default function WalletScreen({ navigation }: any) {
-  const user = useStore((state) => state.user);
-  const walletBalance = useStore((state) => state.walletBalance);
+// ── Inner component — needs to live inside PaystackProvider to use usePaystack
+function WalletContent({ navigation }: any) {
+  const user             = useStore((state) => state.user);
+  const walletBalance    = useStore((state) => state.walletBalance);
   const setWalletBalance = useStore((state) => state.setWalletBalance);
 
-  const [wallet, setWallet] = useState<WalletData | null>(null);
+  const [wallet, setWallet]             = useState<WalletData | null>(null);
   const [transactions, setTransactions] = useState<LedgerEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading]           = useState(true);
+  const [refreshing, setRefreshing]     = useState(false);
   const [showTopUpModal, setShowTopUpModal] = useState(false);
-  const [topUpAmount, setTopUpAmount] = useState('');
-  const [topping, setTopping] = useState(false);
+  const [topUpAmount, setTopUpAmount]   = useState('');
+  const [topping, setTopping]           = useState(false);
+
+  const { popup } = usePaystack();
 
   const fetchWallet = useCallback(async (isRefresh = false) => {
     try {
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
 
-      // GET /wallet — backend WalletService.getWallet(userId) auto-creates if missing
       const walletRes = await apiClient.get('/wallet');
       setWallet(walletRes.data);
       setWalletBalance(Number(walletRes.data.balance) || 0);
 
-      // GET /wallet/transactions — ledger entries for this user
       try {
         const txRes = await apiClient.get('/wallet/transactions');
         setTransactions(txRes.data?.entries || txRes.data || []);
       } catch {
-        // Ledger endpoint may not be exposed; gracefully degrade
         setTransactions([]);
       }
     } catch (err) {
@@ -65,7 +70,7 @@ export default function WalletScreen({ navigation }: any) {
 
   useEffect(() => { fetchWallet(); }, [fetchWallet]);
 
-  const handleTopUp = async () => {
+  const handleTopUp = () => {
     const amount = parseFloat(topUpAmount);
     if (!amount || amount <= 0) {
       Alert.alert('Error', 'Please enter a valid amount');
@@ -76,35 +81,51 @@ export default function WalletScreen({ navigation }: any) {
       return;
     }
 
-    /**
-     * Top-up flow (Paystack only — no Stripe per business rules):
-     * 1. Launch Paystack SDK to collect payment
-     * 2. On success, send reference to backend POST /payments/topup
-     * 3. Backend credits wallet and creates ledger entry
-     *
-     * For now we show the Paystack integration note.
-     */
-    Alert.alert(
-      'Top Up via Paystack',
-      `To add ₦${amount.toLocaleString()} to your wallet:\n\n1. You will be redirected to Paystack\n2. Complete payment\n3. Wallet is credited automatically\n\nPaystack SDK integration required (react-native-paystack-webview).`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Proceed',
-          onPress: () => {
-            setShowTopUpModal(false);
+    // Launch Paystack WebView
+    popup.checkout({
+      email:     user?.email || 'user@dlifestyle.app',
+      amount,
+      reference: `wallet-topup-${user?.id}-${Date.now()}`,
+
+      onSuccess: async (response: any) => {
+        // Get the Paystack reference from the response
+        const ref = response?.transactionRef?.reference
+          || response?.reference
+          || '';
+
+        try {
+          setTopping(true);
+          setShowTopUpModal(false);
+
+          // POST /wallet/fund — backend credits the wallet
+          const result = await walletAPI.fundWallet(amount, ref);
+
+          if (result.success) {
+            setWalletBalance(result.balance);
             setTopUpAmount('');
-            // TODO: Launch Paystack WebView here with amount
-            // On success: call POST /payments { bookingId: null, amount, method: 'paystack', paystackReference }
-          },
-        },
-      ],
-    );
+            await fetchWallet(true);
+            Alert.alert('Top Up Successful! 🎉', result.message);
+          }
+        } catch (err: any) {
+          Alert.alert(
+            'Top Up Failed',
+            err?.response?.data?.message || 'Something went wrong. Contact support.',
+          );
+        } finally {
+          setTopping(false);
+        }
+      },
+
+      onCancel: () => {
+        Alert.alert('Cancelled', 'Top-up was cancelled.');
+      },
+    });
   };
 
   const formatDate = (d: string) =>
     new Date(d).toLocaleDateString('en-US', {
-      month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit',
+      month: 'short', day: 'numeric', year: 'numeric',
+      hour: '2-digit', minute: '2-digit',
     });
 
   const QUICK_AMOUNTS = [1000, 5000, 10000, 20000, 50000];
@@ -263,9 +284,12 @@ export default function WalletScreen({ navigation }: any) {
               ))}
             </View>
 
+            {/* This button now launches the real Paystack WebView */}
             <TouchableOpacity
               style={[styles.topUpButton, topping && { opacity: 0.6 }]}
-              onPress={handleTopUp} disabled={topping} activeOpacity={0.8}>
+              onPress={handleTopUp}
+              disabled={topping}
+              activeOpacity={0.8}>
               <LinearGradient colors={['#f5dd4b', '#d4a017']} style={styles.topUpGradient}
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
                 {topping ? <ActivityIndicator color="#111" /> : (
@@ -282,8 +306,17 @@ export default function WalletScreen({ navigation }: any) {
   );
 }
 
+// ── Outer wrapper — provides Paystack context to WalletContent ────────────────
+export default function WalletScreen({ navigation }: any) {
+  return (
+    <PaystackProvider publicKey={PAYSTACK_PUBLIC_KEY}>
+      <WalletContent navigation={navigation} />
+    </PaystackProvider>
+  );
+}
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
+  container:  { flex: 1, backgroundColor: '#000' },
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: 20, paddingTop: 54, paddingBottom: 20,
@@ -292,16 +325,16 @@ const styles = StyleSheet.create({
     width: 40, height: 40, borderRadius: 20,
     backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center',
   },
-  headerTitle: { fontSize: 20, fontWeight: 'bold', color: '#fff' },
+  headerTitle:  { fontSize: 20, fontWeight: 'bold', color: '#fff' },
   balanceCard: {
     marginHorizontal: 20, borderRadius: 20, padding: 24, marginBottom: 24,
     borderWidth: 1, borderColor: 'rgba(245,221,75,0.2)',
   },
   balanceIconRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
-  currencyLabel: { color: '#888', fontSize: 14, marginLeft: 10 },
-  balanceLabel: { color: '#888', fontSize: 14, marginBottom: 8 },
-  balanceAmount: { color: '#f5dd4b', fontSize: 40, fontWeight: 'bold', marginBottom: 16 },
-  walletNote: { flexDirection: 'row', alignItems: 'center' },
+  currencyLabel:  { color: '#888', fontSize: 14, marginLeft: 10 },
+  balanceLabel:   { color: '#888', fontSize: 14, marginBottom: 8 },
+  balanceAmount:  { color: '#f5dd4b', fontSize: 40, fontWeight: 'bold', marginBottom: 16 },
+  walletNote:     { flexDirection: 'row', alignItems: 'center' },
   walletNoteText: { color: '#666', fontSize: 11, marginLeft: 6 },
   actions: {
     flexDirection: 'row', justifyContent: 'space-around',
@@ -312,17 +345,17 @@ const styles = StyleSheet.create({
     width: 60, height: 60, borderRadius: 30,
     justifyContent: 'center', alignItems: 'center', marginBottom: 8,
   },
-  actionLabel: { color: '#888', fontSize: 12 },
+  actionLabel:  { color: '#888', fontSize: 12 },
   infoBanner: {
     flexDirection: 'row', alignItems: 'flex-start',
     backgroundColor: 'rgba(245,221,75,0.07)', borderRadius: 10,
     marginHorizontal: 20, padding: 14, marginBottom: 24,
   },
-  infoText: { color: '#999', fontSize: 12, marginLeft: 10, flex: 1, lineHeight: 18 },
-  section: { paddingHorizontal: 20 },
+  infoText:     { color: '#999', fontSize: 12, marginLeft: 10, flex: 1, lineHeight: 18 },
+  section:      { paddingHorizontal: 20 },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#fff', marginBottom: 16 },
-  emptyTx: { alignItems: 'center', paddingVertical: 40 },
-  emptyTxText: { color: '#666', fontSize: 14, marginTop: 12 },
+  emptyTx:      { alignItems: 'center', paddingVertical: 40 },
+  emptyTxText:  { color: '#666', fontSize: 14, marginTop: 12 },
   txCard: {
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12,
@@ -332,38 +365,37 @@ const styles = StyleSheet.create({
     width: 44, height: 44, borderRadius: 22,
     justifyContent: 'center', alignItems: 'center', marginRight: 14,
   },
-  txInfo: { flex: 1 },
-  txDesc: { color: '#fff', fontSize: 14, fontWeight: '500', marginBottom: 3 },
-  txDate: { color: '#666', fontSize: 11 },
+  txInfo:   { flex: 1 },
+  txDesc:   { color: '#fff', fontSize: 14, fontWeight: '500', marginBottom: 3 },
+  txDate:   { color: '#666', fontSize: 11 },
   txAmount: { fontSize: 15, fontWeight: 'bold' },
   // Modal
   modalOverlay: {
-    flex: 1, backgroundColor: 'rgba(0,0,0,0.85)',
-    justifyContent: 'flex-end',
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'flex-end',
   },
   modalContainer: {
     backgroundColor: '#111', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24,
   },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  modalTitle: { fontSize: 22, fontWeight: 'bold', color: '#fff' },
-  modalSubtitle: { color: '#666', fontSize: 13, marginBottom: 24 },
+  modalHeader:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
+  modalTitle:     { fontSize: 22, fontWeight: 'bold', color: '#fff' },
+  modalSubtitle:  { color: '#666', fontSize: 13, marginBottom: 24 },
   amountInputContainer: {
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.07)', borderRadius: 12,
     paddingHorizontal: 16, marginBottom: 20,
     borderWidth: 1, borderColor: 'rgba(245,221,75,0.3)',
   },
-  nairaSymbol: { color: '#f5dd4b', fontSize: 28, fontWeight: 'bold', marginRight: 8 },
-  amountInput: { flex: 1, color: '#fff', fontSize: 28, fontWeight: 'bold', paddingVertical: 16 },
-  quickLabel: { color: '#888', fontSize: 13, marginBottom: 10 },
-  quickAmounts: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 24 },
+  nairaSymbol:    { color: '#f5dd4b', fontSize: 28, fontWeight: 'bold', marginRight: 8 },
+  amountInput:    { flex: 1, color: '#fff', fontSize: 28, fontWeight: 'bold', paddingVertical: 16 },
+  quickLabel:     { color: '#888', fontSize: 13, marginBottom: 10 },
+  quickAmounts:   { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 24 },
   quickChip: {
     paddingHorizontal: 16, paddingVertical: 10,
     backgroundColor: 'rgba(245,221,75,0.1)', borderRadius: 20,
     borderWidth: 1, borderColor: 'rgba(245,221,75,0.2)',
   },
-  quickChipText: { color: '#f5dd4b', fontSize: 13, fontWeight: '600' },
-  topUpButton: { borderRadius: 12, overflow: 'hidden' },
-  topUpGradient: { paddingVertical: 18, alignItems: 'center' },
+  quickChipText:   { color: '#f5dd4b', fontSize: 13, fontWeight: '600' },
+  topUpButton:     { borderRadius: 12, overflow: 'hidden' },
+  topUpGradient:   { paddingVertical: 18, alignItems: 'center' },
   topUpButtonText: { color: '#111', fontSize: 18, fontWeight: 'bold' },
 });
